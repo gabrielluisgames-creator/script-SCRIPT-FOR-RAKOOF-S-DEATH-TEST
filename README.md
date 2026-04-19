@@ -1,77 +1,58 @@
--- RAKOOF'S DEATH TEST - SCRIPT FURTIVO (TENTATIVA AVANÇADA DE BYPASS)
+-- RAKOOF'S DEATH TEST - SCRIPT CAMUFLADO COM GETHUI (ALTA FURTIVIDADE)
 
 -- ===========================================================================
--- CAMADA DE PROTEÇÃO INICIAL (EXECUTADA ANTES DE TUDO)
+-- 1. CONFIGURAÇÃO DE CAMUFLAGEM (ANTI-DETECÇÃO DE GUI)
 -- ===========================================================================
-local function applyStealthMeasures()
-    local success, err = pcall(function()
-        local Players = game:GetService("Players")
-        local LocalPlayer = Players.LocalPlayer
-        
-        -- 1. Hook mais robusto da função Kick
-        if LocalPlayer then
-            local Kick = LocalPlayer.Kick
-            LocalPlayer.Kick = function(...) 
-                -- Não faz nada, apenas engole a tentativa de kick
-                return nil 
-            end
+local player = game:GetService("Players").LocalPlayer
+local success, safeContainer = pcall(function()
+    -- Tenta usar a função 'gethui' para um local secreto
+    if gethui then
+        return gethui()
+    -- Se não existir, tenta criar uma pasta oculta no CoreGui
+    elseif cloneref then
+        local coreGui = cloneref(game:GetService("CoreGui"))
+        local hiddenFolder = coreGui:FindFirstChild("__hidden_gui")
+        if not hiddenFolder then
+            hiddenFolder = Instance.new("Folder")
+            hiddenFolder.Name = "__hidden_gui"
+            hiddenFolder.Parent = coreGui
         end
-
-        -- 2. Desativa scripts suspeitos de forma mais ampla
-        for _, obj in ipairs(game:GetDescendants()) do
-            if obj:IsA("LocalScript") or obj:IsA("Script") or obj:IsA("ModuleScript") then
-                local name = obj.Name:lower()
-                -- Palavras-chave comuns em anti-cheats
-                if name:find("anti") or name:find("kick") or name:find("ban") or 
-                   name:find("detect") or name:find("cheat") or name:find("hack") or 
-                   name:find("exploit") or name:find("guard") or name:find("watch") then
-                    obj.Enabled = false
-                end
-            elseif obj:IsA("RemoteEvent") or obj:IsA("RemoteFunction") then
-                local name = obj.Name:lower()
-                if name:find("kick") or name:find("ban") or name:find("report") or 
-                   name:find("modcall") or name:find("admin") then
-                    obj:Destroy()
-                end
-            elseif obj:IsA("ScreenGui") then
-                -- Destroi GUIs de admin frequentemente usadas para kickar
-                local name = obj.Name:lower()
-                if name:find("admin") or name:find("mod") or name:find("cmd") then
-                    obj.Enabled = false
-                end
-            end
-        end
-        
-        -- 3. Remove listeners de logs suspeitos
-        if _G then
-            _G.print = function() end
-            _G.warn = function() end
-        end
-    end)
-    if not success then
-        print("Aviso: Algumas proteções não puderam ser aplicadas.")
+        return hiddenFolder
     end
+    -- Caso tudo falhe, usa o PlayerGui (mas com nomes aleatórios)
+    error("Usando fallback para PlayerGui")
+end)
+
+-- Se nenhum local seguro foi encontrado, usa o PlayerGui padrão
+if not success or not safeContainer then
+    safeContainer = player:WaitForChild("PlayerGui")
+    print("Aviso: gethui não encontrado. Usando PlayerGui com nomes aleatórios.")
 end
 
-applyStealthMeasures()
-
--- ===========================================================================
--- CONFIGURAÇÃO DE SEGURANÇA DO SCRIPT
--- ===========================================================================
-local player = game.Players.LocalPlayer
+-- Aguarda o personagem carregar
 repeat wait() until player.Character and player.Character:FindFirstChild("HumanoidRootPart")
 
--- Variáveis de controle de execução segura
-local stealthMode = true        -- Ativa ações mais lentas e pausas aleatórias
-local maxFarmTime = 120         -- Tempo máximo de farm contínuo (segundos)
-local farmStartTime = 0
-local shouldStopFarm = false
+-- Função para gerar nomes aleatórios (descartáveis)
+local function randomName()
+    local chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+    local name = ""
+    for i = 1, 12 do
+        name = name .. chars:sub(math.random(1, #chars), math.random(1, #chars))
+    end
+    return name
+end
 
--- Interface simples e direta (sem elementos chamativos)
-local screenGui = Instance.new("ScreenGui", player.PlayerGui)
-screenGui.Name = "HubFurtivo"
+-- ===========================================================================
+-- 2. CRIAÇÃO DA INTERFACE (COM NOMES ALEATÓRIOS OU DENTRO DO GETHUI)
+-- ===========================================================================
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = randomName() .. "_Hub"
+screenGui.ResetOnSpawn = false -- CRUCIAL: Impede que o jogo recrie a GUI
+screenGui.Parent = safeContainer
 
+-- Painel principal
 local main = Instance.new("Frame", screenGui)
+main.Name = randomName() .. "_Main"
 main.Size = UDim2.new(0, 250, 0, 250)
 main.Position = UDim2.new(0.5, -125, 0.5, -125)
 main.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
@@ -79,20 +60,23 @@ main.BorderSizePixel = 0
 main.Active = true
 main.Draggable = true
 
+-- Barra de título
 local titleBar = Instance.new("Frame", main)
+titleBar.Name = randomName() .. "_Title"
 titleBar.Size = UDim2.new(1, 0, 0, 30)
 titleBar.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 titleBar.BorderSizePixel = 0
 
 local title = Instance.new("TextLabel", titleBar)
 title.Size = UDim2.new(1, 0, 1, 0)
-title.Text = "Rakoof Hub (Furtivo)"
+title.Text = "Painel"
 title.TextColor3 = Color3.fromRGB(255, 255, 255)
 title.BackgroundTransparency = 1
 title.Font = Enum.Font.SourceSansBold
 title.TextSize = 16
 
 local close = Instance.new("TextButton", titleBar)
+close.Name = randomName() .. "_Close"
 close.Size = UDim2.new(0, 30, 0, 30)
 close.Position = UDim2.new(1, -30, 0, 0)
 close.Text = "X"
@@ -101,11 +85,9 @@ close.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
 close.BorderSizePixel = 0
 close.Font = Enum.Font.SourceSansBold
 close.TextSize = 16
-close.MouseButton1Click:Connect(function() 
-    shouldStopFarm = true
-    screenGui:Destroy() 
-end)
+close.MouseButton1Click:Connect(function() screenGui:Destroy() end)
 
+-- Conteúdo com scroll
 local content = Instance.new("ScrollingFrame", main)
 content.Size = UDim2.new(1, 0, 1, -30)
 content.Position = UDim2.new(0, 0, 0, 30)
@@ -119,6 +101,7 @@ local yPos = 10
 -- Função para adicionar botão
 local function addButton(text, callback)
     local btn = Instance.new("TextButton")
+    btn.Name = randomName() .. "_Btn"
     btn.Size = UDim2.new(1, -20, 0, 35)
     btn.Position = UDim2.new(0, 10, 0, yPos)
     btn.Text = text
@@ -137,6 +120,7 @@ end
 -- Função para adicionar toggle
 local function addToggle(text, callback)
     local btn = Instance.new("TextButton")
+    btn.Name = randomName() .. "_Toggle"
     btn.Size = UDim2.new(1, -20, 0, 35)
     btn.Position = UDim2.new(0, 10, 0, yPos)
     btn.Text = "⚪ " .. text
@@ -158,7 +142,7 @@ local function addToggle(text, callback)
 end
 
 -- ===========================================================================
--- LÓGICA DO JOGO COM ATRASOS E SEGURANÇA
+-- 3. LÓGICA DO JOGO (MANTIDA A MESMA)
 -- ===========================================================================
 local rs = game:GetService("ReplicatedStorage")
 local weaponEvent = rs:FindFirstChild("WeaponEvent")
@@ -198,40 +182,13 @@ local function equipBest()
     end
 end
 
--- Auto Farm com limites de tempo e pausas aleatórias
-addToggle("⚡ Auto Farm (Limitado)", function(v)
-    if v then
-        farmStartTime = tick()
-        shouldStopFarm = false
-        spawn(function()
-            while v and not shouldStopFarm do
-                -- Verifica tempo máximo para não ficar farmando eternamente
-                if stealthMode and (tick() - farmStartTime > maxFarmTime) then
-                    print("Auto Farm pausado por segurança. Reative se desejar.")
-                    break
-                end
-                
-                local boss = getBoss()
-                if boss and weaponEvent then
-                    pcall(function()
-                        weaponEvent:FireServer("Swing", boss)
-                    end)
-                end
-                
-                -- Intervalo base mais longo
-                local waitTime = stealthMode and 0.8 or 0.4
-                wait(waitTime)
-                
-                -- Pausa aleatória para simular jogador humano
-                if stealthMode and math.random(1, 100) <= 15 then
-                    wait(math.random(15, 30) / 10) -- 1.5 a 3 segundos
-                end
-            end
-        end)
-    else
-        shouldStopFarm = true
-    end
+-- Botões e Funções
+addButton("🎯 Matar Rakoof", function()
+    local boss = getBoss()
+    if boss then boss.Humanoid.Health = 0 end
 end)
+
+addButton("🔪 Equipar Melhor", equipBest)
 
 addToggle("🛡️ God Mode", function(v)
     spawn(function()
@@ -240,7 +197,21 @@ addToggle("🛡️ God Mode", function(v)
             if c and c:FindFirstChildOfClass("Humanoid") then
                 c.Humanoid.Health = c.Humanoid.MaxHealth
             end
-            wait(0.2)
+            wait(0.1)
+        end
+    end)
+end)
+
+addToggle("⚡ Auto Farm", function(v)
+    spawn(function()
+        while v do
+            local boss = getBoss()
+            if boss and weaponEvent then
+                pcall(function()
+                    weaponEvent:FireServer("Swing", boss)
+                end)
+            end
+            wait(0.5) -- Intervalo um pouco maior para evitar suspeitas
         end
     end)
 end)
@@ -257,16 +228,9 @@ addToggle("🔋 Stamina Infinita", function(v)
                     h:SetStateEnabled(Enum.HumanoidStateType.Running, true)
                 end
             end
-            wait(0.2)
+            wait(0.1)
         end
     end)
-end)
-
-addButton("🔪 Equipar Melhor", equipBest)
-
-addButton("🎯 Matar Rakoof", function()
-    local boss = getBoss()
-    if boss then boss.Humanoid.Health = 0 end
 end)
 
 addButton("🚀 Teleporte Seguro", function()
@@ -276,11 +240,4 @@ addButton("🚀 Teleporte Seguro", function()
     end
 end)
 
-addButton("⏹️ Parar Tudo e Limpar", function()
-    shouldStopFarm = true
-    -- Desativa todas as corrotinas ativas (simples)
-    screenGui:Destroy()
-    print("Script finalizado e rastros minimizados.")
-end)
-
-print("✅ Script Furtivo carregado. Use com moderação.")
+print("✅ Script Furtivo carregado! Interface camuflada com gethui e nomes aleatórios.")
