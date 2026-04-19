@@ -1,22 +1,17 @@
 --[[
-    RAKOOF'S DEATH TEST - HUB COMPLETO
-    Interface nativa (ScreenGui) + Todas as funções:
-    - Farm automático com suporte a amigo
-    - Pausa na transformação
-    - Scanner e equipamento automático da melhor arma
-]]
+    RAKOOF'S DEATH TEST - SCRIPT REFORÇADO
+    - Diferencia itens de armas reais
+    - Pega a melhor arma, até as que estão no chão
+    - Sistema de farm com proteção contra falhas
+--]]
 
--- ============================================================
--- 1. CRIAÇÃO DA INTERFACE (SCREENGUI)
--- ============================================================
+-- 1. Interface (já testada e funcional)
 local player = game.Players.LocalPlayer
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "RakoofHubUI"
 screenGui.Parent = player:WaitForChild("PlayerGui")
 
--- Painel Principal
 local mainFrame = Instance.new("Frame")
-mainFrame.Name = "MainFrame"
 mainFrame.Size = UDim2.new(0, 300, 0, 450)
 mainFrame.Position = UDim2.new(0.5, -150, 0.5, -225)
 mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
@@ -25,7 +20,6 @@ mainFrame.Active = true
 mainFrame.Draggable = true
 mainFrame.Parent = screenGui
 
--- Título
 local title = Instance.new("TextLabel")
 title.Size = UDim2.new(1, 0, 0, 30)
 title.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
@@ -35,7 +29,6 @@ title.Font = Enum.Font.SourceSansBold
 title.TextSize = 18
 title.Parent = mainFrame
 
--- Botão Ocultar/Mostrar
 local toggleButton = Instance.new("TextButton")
 toggleButton.Size = UDim2.new(0, 60, 0, 25)
 toggleButton.Position = UDim2.new(1, -65, 0, 5)
@@ -53,89 +46,16 @@ toggleButton.MouseButton1Click:Connect(function()
     toggleButton.Text = panelVisible and "Ocultar" or "Mostrar"
 end)
 
--- Área de conteúdo com rolagem (ScrollingFrame)
 local contentFrame = Instance.new("ScrollingFrame")
 contentFrame.Size = UDim2.new(1, 0, 1, -35)
 contentFrame.Position = UDim2.new(0, 0, 0, 35)
 contentFrame.BackgroundTransparency = 1
 contentFrame.BorderSizePixel = 0
 contentFrame.ScrollBarThickness = 8
-contentFrame.CanvasSize = UDim2.new(0, 0, 0, 600) -- Ajustável
+contentFrame.CanvasSize = UDim2.new(0, 0, 0, 600)
 contentFrame.Parent = mainFrame
 
--- ============================================================
--- 2. VARIÁVEIS GLOBAIS DO FARM
--- ============================================================
-local Farming = false
-local PauseFarming = false
-local TransformDetected = false
-local TargetFriendName = ""
-local KillThreshold = 5
-local FarmConnection = nil
-
--- Funções de localização
-local function GetBoss()
-    for _, v in pairs(workspace:GetDescendants()) do
-        if v.Name == "RakOOF" or v.Name == "Rake" or v.Name:lower():find("rakoof") then
-            local hum = v:FindFirstChildOfClass("Humanoid")
-            if hum and hum.Health > 0 then
-                return v, hum
-            end
-        end
-    end
-    return nil, nil
-end
-
-local function GetScratcher()
-    for _, v in pairs(workspace:GetDescendants()) do
-        if v.Name == "Scratcher" or v.Name:lower():find("scratch") then
-            local hum = v:FindFirstChildOfClass("Humanoid")
-            if hum and hum.Health > 0 then
-                return v, hum
-            end
-        end
-    end
-    return nil, nil
-end
-
--- Scanner da melhor arma (mesmo do script anterior)
-local function scanBestWeapon()
-    local bestWeapon = nil
-    local bestDPS = 0
-    local items = {}
-    local backpack = player:FindFirstChild("Backpack")
-    if backpack then
-        for _, item in ipairs(backpack:GetChildren()) do
-            if item:IsA("Tool") then table.insert(items, item) end
-        end
-    end
-    if player.Character then
-        for _, item in ipairs(player.Character:GetChildren()) do
-            if item:IsA("Tool") then table.insert(items, item) end
-        end
-    end
-    for _, tool in ipairs(items) do
-        local damage = 0
-        local speed = 1
-        local name = tool.Name:lower()
-        if name:find("kunai") then damage = 50; speed = 1.5
-        elseif name:find("sword") or name:find("espada") then damage = 40; speed = 1.0
-        elseif name:find("hammer") or name:find("martelo") then damage = 60; speed = 0.7
-        elseif name:find("axe") or name:find("machado") then damage = 55; speed = 0.8
-        elseif name:find("gun") or name:find("pistol") then damage = 30; speed = 2.0
-        else damage = 20 end
-        local dps = damage * speed
-        if dps > bestDPS then bestDPS = dps; bestWeapon = tool end
-    end
-    return bestWeapon
-end
-
--- ============================================================
--- 3. CONSTRUÇÃO DOS ELEMENTOS DA UI
--- ============================================================
-local yOffset = 10
-
--- Função auxiliar para criar labels
+-- 2. Funções Utilitárias
 local function createLabel(text, y)
     local lbl = Instance.new("TextLabel")
     lbl.Size = UDim2.new(1, -10, 0, 20)
@@ -150,7 +70,148 @@ local function createLabel(text, y)
     return lbl
 end
 
--- Seção: Configuração de Amigo
+-- 3. Detecção inteligente de armas (agora diferenciando itens inúteis)
+local function isWeapon(tool)
+    if not tool:IsA("Tool") then return false end
+    
+    -- Lista de nomes de itens que NÃO são armas
+    local nonWeapons = {"lantern", "flashlight", "vest", "night", "vision", "tool", "key", "battery", "medkit", "bandage", "apple", "cola", "water", "food", "drink", "map", "compass", "watch", "radio", "phone", "camera", "binoculars"}
+    local name = tool.Name:lower()
+    for _, nw in ipairs(nonWeapons) do
+        if name:find(nw) then return false end
+    end
+    
+    -- Lista de palavras que indicam ser uma arma
+    local weapons = {"kunai", "sword", "espada", "hammer", "martelo", "axe", "machado", "gun", "pistol", "rifle", "shotgun", "taser", "cheese", "katana", "spear", "lança", "bow", "arco", "dagger", "adaga", "mace", "clava", "club", "porrete", "knife", "faca", "canhão", "cannon"}
+    for _, w in ipairs(weapons) do
+        if name:find(w) then return true end
+    end
+    
+    -- Se tiver um script de ataque ou atributo de dano
+    if tool:FindFirstChild("Damage") or tool:FindFirstChild("Attack") or tool:FindFirstChild("Swing") or tool:FindFirstChild("Fire") then
+        return true
+    end
+    
+    return false
+end
+
+local function getWeaponDamage(tool)
+    local damage = 0
+    local speed = 1
+    
+    local name = tool.Name:lower()
+    if name:find("kunai") then damage = 50; speed = 1.5
+    elseif name:find("sword") or name:find("espada") then damage = 40; speed = 1.0
+    elseif name:find("hammer") or name:find("martelo") then damage = 60; speed = 0.7
+    elseif name:find("axe") or name:find("machado") then damage = 55; speed = 0.8
+    elseif name:find("taser") then damage = 30; speed = 1.2
+    elseif name:find("cheese") then damage = 45; speed = 0.9
+    elseif name:find("gun") or name:find("pistol") then damage = 30; speed = 2.0
+    elseif name:find("rifle") then damage = 70; speed = 0.5
+    elseif name:find("shotgun") then damage = 80; speed = 0.4
+    elseif name:find("katana") then damage = 55; speed = 1.3
+    elseif name:find("spear") or name:find("lança") then damage = 45; speed = 0.9
+    elseif name:find("bow") or name:find("arco") then damage = 40; speed = 0.8
+    elseif name:find("dagger") or name:find("adaga") then damage = 35; speed = 2.0
+    elseif name:find("mace") or name:find("clava") then damage = 50; speed = 0.7
+    elseif name:find("knife") or name:find("faca") then damage = 25; speed = 2.0
+    else damage = 20 end
+    
+    return damage, speed
+end
+
+-- Scanner de melhor arma (inclui itens no chão)
+local function scanBestWeapon()
+    local bestWeapon = nil
+    local bestDPS = 0
+    local items = {}
+    
+    -- Mochila e personagem
+    local backpack = player:FindFirstChild("Backpack")
+    if backpack then
+        for _, item in ipairs(backpack:GetChildren()) do
+            if isWeapon(item) then table.insert(items, item) end
+        end
+    end
+    if player.Character then
+        for _, item in ipairs(player.Character:GetChildren()) do
+            if isWeapon(item) then table.insert(items, item) end
+        end
+    end
+    
+    -- Itens no chão (próximos ao jogador)
+    for _, v in ipairs(workspace:GetDescendants()) do
+        if v:IsA("Tool") and isWeapon(v) and v.Parent ~= player.Character and v.Parent ~= backpack then
+            local dist = (v.Position - player.Character.HumanoidRootPart.Position).Magnitude
+            if dist < 50 then -- Alcance de 50 studs
+                table.insert(items, v)
+            end
+        end
+    end
+    
+    for _, tool in ipairs(items) do
+        local damage, speed = getWeaponDamage(tool)
+        local dps = damage * speed
+        if dps > bestDPS then
+            bestDPS = dps
+            bestWeapon = tool
+        end
+    end
+    
+    return bestWeapon
+end
+
+-- Função para equipar a melhor arma (pega do chão se necessário)
+local function equipBestWeapon()
+    local weapon = scanBestWeapon()
+    if not weapon then return false end
+    
+    local character = player.Character
+    if not character or not character:FindFirstChildOfClass("Humanoid") then return false end
+    
+    -- Se a arma não estiver no personagem nem na mochila, tenta pegar do chão
+    if weapon.Parent ~= character and weapon.Parent ~= player:FindFirstChild("Backpack") then
+        firetouchinterest(player.Character.HumanoidRootPart, weapon, 0)
+        wait(0.2)
+        firetouchinterest(player.Character.HumanoidRootPart, weapon, 1)
+    end
+    
+    if weapon.Parent == player:FindFirstChild("Backpack") or weapon.Parent == character then
+        character.Humanoid:EquipTool(weapon)
+        return true
+    end
+    return false
+end
+
+-- 4. Lógica de Farm Robusta
+local Farming = false
+local PauseFarming = false
+local TargetFriendName = ""
+local KillThreshold = 5
+local statusLabel
+
+local function GetBoss()
+    for _, v in pairs(workspace:GetDescendants()) do
+        if v.Name == "RakOOF" or v.Name == "Rake" or v.Name:lower():find("rakoof") then
+            local hum = v:FindFirstChildOfClass("Humanoid")
+            if hum and hum.Health > 0 then return v, hum end
+        end
+    end
+    return nil, nil
+end
+
+local function GetScratcher()
+    for _, v in pairs(workspace:GetDescendants()) do
+        if v.Name == "Scratcher" or v.Name:lower():find("scratch") then
+            local hum = v:FindFirstChildOfClass("Humanoid")
+            if hum and hum.Health > 0 then return v, hum end
+        end
+    end
+    return nil, nil
+end
+
+-- 5. Construção da UI
+local yOffset = 10
 createLabel("👤 Nome do Amigo:", yOffset)
 yOffset = yOffset + 20
 
@@ -181,7 +242,6 @@ thresholdBox.TextSize = 14
 thresholdBox.Parent = contentFrame
 yOffset = yOffset + 40
 
--- Seção: Scanner de Armas
 local scanButton = Instance.new("TextButton")
 scanButton.Size = UDim2.new(1, -10, 0, 35)
 scanButton.Position = UDim2.new(0, 5, 0, yOffset)
@@ -204,8 +264,7 @@ equipButton.TextSize = 14
 equipButton.Parent = contentFrame
 yOffset = yOffset + 45
 
--- Status
-local statusLabel = Instance.new("TextLabel")
+statusLabel = Instance.new("TextLabel")
 statusLabel.Size = UDim2.new(1, -10, 0, 20)
 statusLabel.Position = UDim2.new(0, 5, 0, yOffset)
 statusLabel.BackgroundTransparency = 1
@@ -217,7 +276,6 @@ statusLabel.TextXAlignment = Enum.TextXAlignment.Left
 statusLabel.Parent = contentFrame
 yOffset = yOffset + 25
 
--- Toggle do Farm
 local farmToggle = Instance.new("TextButton")
 farmToggle.Size = UDim2.new(1, -10, 0, 40)
 farmToggle.Position = UDim2.new(0, 5, 0, yOffset)
@@ -229,94 +287,73 @@ farmToggle.TextSize = 16
 farmToggle.Parent = contentFrame
 yOffset = yOffset + 50
 
--- Ajusta o CanvasSize
 contentFrame.CanvasSize = UDim2.new(0, 0, 0, yOffset + 10)
 
--- ============================================================
--- 4. LÓGICA DOS BOTÕES E FARM
--- ============================================================
+-- 6. Eventos
 scanButton.MouseButton1Click:Connect(function()
     local weapon = scanBestWeapon()
     if weapon then
-        statusLabel.Text = "Melhor arma: " .. weapon.Name
+        local dmg, spd = getWeaponDamage(weapon)
+        statusLabel.Text = string.format("Melhor arma: %s (Dano: %d, Vel: %.1f)", weapon.Name, dmg, spd)
     else
         statusLabel.Text = "Nenhuma arma encontrada."
     end
 end)
 
 equipButton.MouseButton1Click:Connect(function()
-    local weapon = scanBestWeapon()
-    if weapon then
-        if player.Character and player.Character:FindFirstChildOfClass("Humanoid") then
-            player.Character.Humanoid:EquipTool(weapon)
-            statusLabel.Text = "Equipada: " .. weapon.Name
-        end
+    if equipBestWeapon() then
+        local weapon = scanBestWeapon()
+        statusLabel.Text = "Equipada: " .. weapon.Name
     else
-        statusLabel.Text = "Nenhuma arma para equipar."
+        statusLabel.Text = "Falha ao equipar."
     end
 end)
 
 farmToggle.MouseButton1Click:Connect(function()
     Farming = not Farming
     if Farming then
-        -- Lê os valores dos campos
         TargetFriendName = friendBox.Text
         KillThreshold = tonumber(thresholdBox.Text) or 5
         
         farmToggle.Text = "⏸ PARAR FARM"
         farmToggle.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
-        statusLabel.Text = "Farm ATIVO. Ajudando " .. (TargetFriendName ~= "" and TargetFriendName or "amigo")
+        statusLabel.Text = "Farm ATIVO."
         
-        -- Inicia a thread do farm
         spawn(function()
             while Farming do
-                if PauseFarming then
-                    wait(0.5)
-                    continue
-                end
-                
-                -- Equipa automaticamente a melhor arma
-                local best = scanBestWeapon()
-                if best and player.Character and player.Character:FindFirstChildOfClass("Humanoid") then
-                    player.Character.Humanoid:EquipTool(best)
-                end
-                
-                -- Verifica se deve atacar o boss
-                local shouldAttackBoss = false
-                if TargetFriendName ~= "" then
-                    local targetPlayer = game.Players:FindFirstChild(TargetFriendName)
-                    if targetPlayer then
-                        local leaderstats = targetPlayer:FindFirstChild("leaderstats")
-                        local kills = leaderstats and leaderstats:FindFirstChild("Kills")
-                        if kills and kills.Value >= KillThreshold then
-                            shouldAttackBoss = true
+                pcall(function()
+                    if PauseFarming then wait(0.5); return end
+                    
+                    equipBestWeapon()
+                    
+                    local shouldAttackBoss = false
+                    if TargetFriendName ~= "" then
+                        local targetPlayer = game.Players:FindFirstChild(TargetFriendName)
+                        if targetPlayer then
+                            local leaderstats = targetPlayer:FindFirstChild("leaderstats")
+                            local kills = leaderstats and leaderstats:FindFirstChild("Kills")
+                            if kills and kills.Value >= KillThreshold then
+                                shouldAttackBoss = true
+                            end
                         end
                     end
-                end
-                
-                -- Ataca o alvo apropriado
-                if shouldAttackBoss then
-                    local boss, hum = GetBoss()
-                    if boss and hum then
-                        local args = {[1] = "Swing", [2] = boss}
-                        pcall(function()
+                    
+                    if shouldAttackBoss then
+                        local boss, hum = GetBoss()
+                        if boss and hum then
+                            local args = {[1] = "Swing", [2] = boss}
                             game:GetService("ReplicatedStorage"):FindFirstChild("WeaponEvent"):FireServer(unpack(args))
-                        end)
-                        statusLabel.Text = "Atacando RAKOOF!"
-                    end
-                else
-                    local scratcher, humS = GetScratcher()
-                    if scratcher and humS then
-                        local args = {[1] = "Swing", [2] = scratcher}
-                        pcall(function()
-                            game:GetService("ReplicatedStorage"):FindFirstChild("WeaponEvent"):FireServer(unpack(args))
-                        end)
-                        statusLabel.Text = "Farmando Scratchers..."
+                            statusLabel.Text = "Atacando RAKOOF!"
+                        end
                     else
-                        statusLabel.Text = "Procurando inimigos..."
+                        local scratcher, humS = GetScratcher()
+                        if scratcher and humS then
+                            local args = {[1] = "Swing", [2] = scratcher}
+                            game:GetService("ReplicatedStorage"):FindFirstChild("WeaponEvent"):FireServer(unpack(args))
+                            statusLabel.Text = "Farmando Scratchers..."
+                        end
                     end
-                end
-                
+                end)
                 wait(0.3)
             end
         end)
@@ -327,9 +364,7 @@ farmToggle.MouseButton1Click:Connect(function()
     end
 end)
 
--- ============================================================
--- 5. MONITOR DE TRANSFORMAÇÃO (PAUSA AUTOMÁTICA)
--- ============================================================
+-- Monitor de Transformação
 spawn(function()
     while true do
         if Farming then
@@ -337,16 +372,14 @@ spawn(function()
             if boss then
                 local transformEffect = boss:FindFirstChild("Transforming") or boss:FindFirstChild("Rage")
                 if transformEffect and transformEffect.Value == true then
-                    if not TransformDetected then
-                        TransformDetected = true
+                    if not PauseFarming then
                         PauseFarming = true
                         statusLabel.Text = "⚠️ TRANSFORMAÇÃO! Pausado."
                     end
                 else
-                    if TransformDetected then
-                        TransformDetected = false
+                    if PauseFarming then
                         PauseFarming = false
-                        statusLabel.Text = "Transformação finalizada. Retomando..."
+                        statusLabel.Text = "Retomando farm..."
                     end
                 end
             end
@@ -355,9 +388,7 @@ spawn(function()
     end
 end)
 
--- ============================================================
--- 6. BOTÃO FLUTUANTE PARA MOBILE
--- ============================================================
+-- Botão Flutuante
 local floatButton = Instance.new("TextButton")
 floatButton.Size = UDim2.new(0, 45, 0, 45)
 floatButton.Position = UDim2.new(1, -55, 0.5, -22)
@@ -376,11 +407,10 @@ floatButton.MouseButton1Click:Connect(function()
     toggleButton.Text = panelVisible and "Ocultar" or "Mostrar"
 end)
 
--- Notificação
 game:GetService("StarterGui"):SetCore("SendNotification", {
     Title = "Rakoof Hub",
-    Text = "Interface carregada! Configure amigo e inicie o farm.",
+    Text = "Interface carregada!",
     Duration = 5,
 })
 
-print("✅ Rakoof Hub completo carregado com sucesso!")
+print("✅ Rakoof Hub reforçado carregado!")
