@@ -1,56 +1,32 @@
--- RAKOOF'S DEATH TEST - SCRIPT FINAL COM GOD MODE 20K E HIT KILL GARANTIDO
+-- RAKOOF'S DEATH TEST - SCRIPT FUNCIONAL E DIRETO (GOD MODE REAL + HIT KILL)
 
--- ===========================================================================
--- 1. CAMUFLAGEM AVANÇADA DA INTERFACE (GETHUI + NOMES ALEATÓRIOS)
--- ===========================================================================
 local player = game.Players.LocalPlayer
-local success, safeContainer = pcall(function()
-    if gethui then
-        return gethui()
-    elseif cloneref then
-        local coreGui = cloneref(game:GetService("CoreGui"))
-        local hiddenFolder = coreGui:FindFirstChild("__hidden_gui")
-        if not hiddenFolder then
-            hiddenFolder = Instance.new("Folder")
-            hiddenFolder.Name = "__hidden_gui"
-            hiddenFolder.Parent = coreGui
-        end
-        return hiddenFolder
-    end
-    error("Fallback para PlayerGui")
-end)
+local replicatedStorage = game:GetService("ReplicatedStorage")
+local runService = game:GetService("RunService")
 
-if not success or not safeContainer then
-    safeContainer = player:WaitForChild("PlayerGui")
-end
-
+-- Aguarda personagem
 repeat wait() until player.Character and player.Character:FindFirstChild("HumanoidRootPart")
 
-local function randomName()
-    local chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-    local name = ""
-    for i = 1, 12 do name = name .. chars:sub(math.random(1, #chars), math.random(1, #chars)) end
-    return name
-end
+-- ===========================================================================
+-- INTERFACE SIMPLES (COM BOTÃO FLUTUANTE)
+-- ===========================================================================
+local screenGui = Instance.new("ScreenGui", player.PlayerGui)
+screenGui.Name = "RakoofHub"
 
--- Criação da interface furtiva
-local screenGui = Instance.new("ScreenGui")
-screenGui.Name = randomName() .. "_Hub"
-screenGui.ResetOnSpawn = false
-screenGui.Parent = safeContainer
-
+-- Painel principal
 local main = Instance.new("Frame", screenGui)
-main.Name = randomName() .. "_Main"
-main.Size = UDim2.new(0, 250, 0, 250)
-main.Position = UDim2.new(0.5, -125, 0.5, -125)
-main.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+main.Size = UDim2.new(0, 220, 0, 200)
+main.Position = UDim2.new(0.5, -110, 0.5, -100)
+main.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
 main.BorderSizePixel = 0
 main.Active = true
 main.Draggable = true
+main.Visible = true
 
+-- Barra de título
 local titleBar = Instance.new("Frame", main)
-titleBar.Size = UDim2.new(1, 0, 0, 30)
-titleBar.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+titleBar.Size = UDim2.new(1, 0, 0, 25)
+titleBar.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
 titleBar.BorderSizePixel = 0
 
 local title = Instance.new("TextLabel", titleBar)
@@ -59,58 +35,89 @@ title.Text = "Rakoof Hub"
 title.TextColor3 = Color3.fromRGB(255, 255, 255)
 title.BackgroundTransparency = 1
 title.Font = Enum.Font.SourceSansBold
-title.TextSize = 16
+title.TextSize = 14
 
 local close = Instance.new("TextButton", titleBar)
-close.Size = UDim2.new(0, 30, 0, 30)
-close.Position = UDim2.new(1, -30, 0, 0)
+close.Size = UDim2.new(0, 25, 0, 25)
+close.Position = UDim2.new(1, -25, 0, 0)
 close.Text = "X"
 close.TextColor3 = Color3.fromRGB(255, 255, 255)
-close.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+close.BackgroundColor3 = Color3.fromRGB(200, 60, 60)
 close.BorderSizePixel = 0
 close.Font = Enum.Font.SourceSansBold
-close.TextSize = 16
+close.TextSize = 14
 close.MouseButton1Click:Connect(function() screenGui:Destroy() end)
 
+-- Conteúdo
 local content = Instance.new("ScrollingFrame", main)
-content.Size = UDim2.new(1, 0, 1, -30)
-content.Position = UDim2.new(0, 0, 0, 30)
+content.Size = UDim2.new(1, 0, 1, -25)
+content.Position = UDim2.new(0, 0, 0, 25)
 content.BackgroundTransparency = 1
 content.BorderSizePixel = 0
-content.ScrollBarThickness = 5
+content.ScrollBarThickness = 4
 content.CanvasSize = UDim2.new(0, 0, 0, 0)
 
-local yPos = 10
+-- Botão flutuante (minimizar/abrir)
+local floatBtn = Instance.new("TextButton", screenGui)
+floatBtn.Size = UDim2.new(0, 45, 0, 45)
+floatBtn.Position = UDim2.new(1, -60, 0.8, 0)
+floatBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
+floatBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+floatBtn.Text = "⚡"
+floatBtn.Font = Enum.Font.SourceSansBold
+floatBtn.TextSize = 22
+floatBtn.BorderSizePixel = 0
+floatBtn.Visible = false
+floatBtn.Active = true
+floatBtn.Draggable = true
+floatBtn.MouseButton1Click:Connect(function()
+    main.Visible = true
+    floatBtn.Visible = false
+end)
 
+-- Botão minimizar no painel
+local minimize = Instance.new("TextButton", titleBar)
+minimize.Size = UDim2.new(0, 25, 0, 25)
+minimize.Position = UDim2.new(1, -55, 0, 0)
+minimize.Text = "–"
+minimize.TextColor3 = Color3.fromRGB(255, 255, 255)
+minimize.BackgroundColor3 = Color3.fromRGB(100, 100, 120)
+minimize.BorderSizePixel = 0
+minimize.Font = Enum.Font.SourceSansBold
+minimize.TextSize = 18
+minimize.MouseButton1Click:Connect(function()
+    main.Visible = false
+    floatBtn.Visible = true
+end)
+
+local yPos = 10
 local function addButton(text, callback)
     local btn = Instance.new("TextButton")
-    btn.Name = randomName() .. "_Btn"
-    btn.Size = UDim2.new(1, -20, 0, 35)
+    btn.Size = UDim2.new(1, -20, 0, 30)
     btn.Position = UDim2.new(0, 10, 0, yPos)
     btn.Text = text
-    btn.BackgroundColor3 = Color3.fromRGB(50, 50, 70)
+    btn.BackgroundColor3 = Color3.fromRGB(60, 60, 80)
     btn.TextColor3 = Color3.fromRGB(255, 255, 255)
     btn.BorderSizePixel = 0
     btn.Font = Enum.Font.SourceSansBold
-    btn.TextSize = 14
+    btn.TextSize = 13
     btn.Parent = content
     btn.MouseButton1Click:Connect(callback)
-    yPos = yPos + 40
-    content.CanvasSize = UDim2.new(0, 0, 0, yPos + 20)
+    yPos = yPos + 35
+    content.CanvasSize = UDim2.new(0, 0, 0, yPos + 10)
     return btn
 end
 
 local function addToggle(text, callback)
     local btn = Instance.new("TextButton")
-    btn.Name = randomName() .. "_Toggle"
-    btn.Size = UDim2.new(1, -20, 0, 35)
+    btn.Size = UDim2.new(1, -20, 0, 30)
     btn.Position = UDim2.new(0, 10, 0, yPos)
     btn.Text = "⚪ " .. text
-    btn.BackgroundColor3 = Color3.fromRGB(50, 50, 70)
+    btn.BackgroundColor3 = Color3.fromRGB(60, 60, 80)
     btn.TextColor3 = Color3.fromRGB(255, 255, 255)
     btn.BorderSizePixel = 0
     btn.Font = Enum.Font.SourceSansBold
-    btn.TextSize = 14
+    btn.TextSize = 13
     btn.Parent = content
     local enabled = false
     btn.MouseButton1Click:Connect(function()
@@ -118,129 +125,153 @@ local function addToggle(text, callback)
         btn.Text = (enabled and "🔵 " or "⚪ ") .. text
         callback(enabled)
     end)
-    yPos = yPos + 40
-    content.CanvasSize = UDim2.new(0, 0, 0, yPos + 20)
+    yPos = yPos + 35
+    content.CanvasSize = UDim2.new(0, 0, 0, yPos + 10)
     return btn
 end
 
 -- ===========================================================================
--- 2. FUNÇÕES DE HIT KILL E DETECÇÃO DE INIMIGOS
+-- FUNÇÕES DE JOGO (HIT KILL REAL)
 -- ===========================================================================
-local function getAllHostileNPCs()
-    local npcs = {}
-    for _, obj in pairs(workspace:GetDescendants()) do
-        if obj:FindFirstChildOfClass("Humanoid") and not game.Players:GetPlayerFromCharacter(obj) then
-            local name = obj.Name:lower()
-            -- Lista expandida de NPCs hostis conhecidos no jogo
-            if name:find("rakoof") or name:find("rake") or name:find("scratch") or name:find("zombie") or name:find("monster") or name:find("enemy") or name:find("boss") then
-                local hum = obj.Humanoid
-                if hum.Health > 0 then
-                    table.insert(npcs, obj)
+local function findRakoof()
+    for _, obj in ipairs(workspace:GetDescendants()) do
+        if obj:IsA("Model") and (obj.Name:lower():find("rakoof") or obj.Name == "Rake") then
+            local hum = obj:FindFirstChildOfClass("Humanoid")
+            if hum and hum.Health > 0 then
+                return obj, hum
+            end
+        end
+    end
+    return nil, nil
+end
+
+local function findAllHostiles()
+    local hostiles = {}
+    for _, obj in ipairs(workspace:GetDescendants()) do
+        if obj:IsA("Model") and obj:FindFirstChildOfClass("Humanoid") then
+            local hum = obj.Humanoid
+            if hum.Health > 0 and not game.Players:GetPlayerFromCharacter(obj) then
+                local name = obj.Name:lower()
+                if name:find("rakoof") or name:find("rake") or name:find("scratch") or name:find("zombie") or name:find("monster") or name:find("enemy") then
+                    table.insert(hostiles, obj)
                 end
             end
         end
     end
-    return npcs
+    return hostiles
 end
 
 local function hitKill(target)
     if not target then return false end
     local hum = target:FindFirstChildOfClass("Humanoid")
-    if not hum or hum.Health <= 0 then return false end
-    
-    -- Método 1: Forçar a quebra das juntas (morte instantânea)
-    pcall(function()
-        target:BreakJoints()
-    end)
-    
-    -- Método 2: Remover o Humanoid (mata o NPC)
-    pcall(function()
-        hum:Destroy()
-    end)
-    
-    -- Método 3: Zerar a vida como fallback
-    pcall(function()
+    if hum and hum.Health > 0 then
         hum.Health = 0
-    end)
-    
-    return true
+        return true
+    end
+    return false
 end
 
 -- ===========================================================================
--- 3. CONFIGURAÇÃO DOS TOGGLES E BOTÕES
+-- GOD MODE REAL (restaura vida para 20k a cada dano)
 -- ===========================================================================
+local godModeEnabled = false
+local godModeConnection
 
--- God Mode 20k com proteção total
-addToggle("🛡️ God Mode (20k Vida)", function(v)
-    spawn(function()
-        while v do
-            local char = player.Character
-            if char then
-                local hum = char:FindFirstChildOfClass("Humanoid")
-                if hum then
-                    hum.MaxHealth = 20000
-                    hum.Health = 20000
-                    -- Bloqueia qualquer dano futuro
-                    hum:SetAttribute("NoDamage", true)
-                end
-                -- Força a vida a ficar em 20k mesmo se o jogo tentar mudar
-                for _, part in ipairs(char:GetDescendants()) do
-                    if part:IsA("BasePart") then
-                        part.CanCollide = true -- mantém colisão normal
-                    end
-                end
-            end
-            wait(0.1)
-        end
-    end)
-end)
-
--- Auto Farm com Hit Kill para todos os NPCs hostis
-addToggle("⚡ Auto Farm (Hit Kill)", function(v)
-    spawn(function()
-        while v do
-            local npcs = getAllHostileNPCs()
-            for _, npc in ipairs(npcs) do
-                hitKill(npc)
-            end
-            wait(0.5) -- intervalo seguro
-        end
-    end)
-end)
-
--- Botão para equipar a melhor arma (apenas para garantia)
-addButton("🔪 Equipar Melhor Arma", function()
-    local best, bestDps = nil, 0
-    local items = {}
-    local function scan(cont)
-        for _, t in pairs(cont:GetChildren()) do
-            if t:IsA("Tool") then table.insert(items, t) end
-        end
-    end
-    if player.Backpack then scan(player.Backpack) end
-    if player.Character then scan(player.Character) end
-    for _, t in pairs(items) do
-        local dps = 20
-        local n = t.Name:lower()
-        if n:find("kunai") then dps = 75
-        elseif n:find("katana") then dps = 70
-        elseif n:find("sword") then dps = 40
-        elseif n:find("axe") then dps = 48
-        elseif n:find("hammer") then dps = 45
-        end
-        if dps > bestDps then best, bestDps = t, dps end
-    end
-    if best and player.Character then
-        player.Character.Humanoid:EquipTool(best)
-    end
-end)
-
--- Teleporte para local seguro (opcional)
-addButton("🚀 Teleporte Seguro", function()
+local function enableGodMode()
+    if godModeConnection then godModeConnection:Disconnect() end
     local char = player.Character
-    if char and char:FindFirstChild("HumanoidRootPart") then
-        char.HumanoidRootPart.CFrame = CFrame.new(0, 30, 0)
+    if not char then return end
+    local hum = char:FindFirstChildOfClass("Humanoid")
+    if not hum then return end
+    
+    -- Define vida máxima para 20k
+    hum.MaxHealth = 20000
+    hum.Health = 20000
+    
+    -- Bloqueia dano real
+    godModeConnection = hum.HealthChanged:Connect(function(newHealth)
+        if godModeEnabled and newHealth < 20000 then
+            hum.Health = 20000
+        end
+    end)
+end
+
+-- ===========================================================================
+-- AUTO FARM (HIT KILL EM TODOS OS HOSTIS)
+-- ===========================================================================
+local autoFarmEnabled = false
+spawn(function()
+    while true do
+        if autoFarmEnabled then
+            local hostiles = findAllHostiles()
+            for _, enemy in ipairs(hostiles) do
+                hitKill(enemy)
+            end
+        end
+        wait(0.3) -- Intervalo curto para matar rápido
     end
 end)
 
-print("✅ Script final carregado! God Mode 20k, Auto Farm Hit Kill e camuflagem ativos.")
+-- ===========================================================================
+-- BOTÕES E TOGGLES
+-- ===========================================================================
+addToggle("🛡️ God Mode (20k real)", function(v)
+    godModeEnabled = v
+    if v then
+        enableGodMode()
+    else
+        if godModeConnection then
+            godModeConnection:Disconnect()
+            godModeConnection = nil
+        end
+    end
+end)
+
+addToggle("⚡ Auto Farm (Hit Kill)", function(v)
+    autoFarmEnabled = v
+end)
+
+addButton("🔪 Equipar Melhor Arma", function()
+    -- Função simples de equipar qualquer arma disponível
+    local tool = nil
+    if player.Backpack then
+        for _, t in ipairs(player.Backpack:GetChildren()) do
+            if t:IsA("Tool") then tool = t; break end
+        end
+    end
+    if not tool and player.Character then
+        for _, t in ipairs(player.Character:GetChildren()) do
+            if t:IsA("Tool") then tool = t; break end
+        end
+    end
+    if tool and player.Character then
+        player.Character.Humanoid:EquipTool(tool)
+    end
+end)
+
+addButton("🎯 Teleportar até Rakoof", function()
+    local rakoof, _ = findRakoof()
+    if rakoof and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+        local root = rakoof:FindFirstChild("HumanoidRootPart") or rakoof:FindFirstChild("Torso") or rakoof:FindFirstChild("Head")
+        if root then
+            player.Character.HumanoidRootPart.CFrame = root.CFrame * CFrame.new(0, 5, 0)
+        end
+    end
+end)
+
+addButton("☠️ Matar Rakoof Agora", function()
+    local rakoof, hum = findRakoof()
+    if rakoof and hum then
+        hum.Health = 0
+    end
+end)
+
+-- Ajuste inicial do personagem
+if player.Character then
+    local hum = player.Character:FindFirstChildOfClass("Humanoid")
+    if hum then
+        hum.MaxHealth = 100 -- valor padrão do jogo, mas será sobrescrito pelo God Mode se ativado
+    end
+end
+
+print("✅ Script carregado! Use o botão '–' para minimizar.")
