@@ -1,4 +1,4 @@
--- RAKOOF'S DEATH TEST - SCRIPT CAMUFLADO COM GETHUI (ALTA FURTIVIDADE)
+-- RAKOOF'S DEATH TEST - SCRIPT OTIMIZADO COM HIT KILL
 
 -- ===========================================================================
 -- 1. CONFIGURAÇÃO DE CAMUFLAGEM (ANTI-DETECÇÃO DE GUI)
@@ -142,21 +142,54 @@ local function addToggle(text, callback)
 end
 
 -- ===========================================================================
--- 3. LÓGICA DO JOGO (MANTIDA A MESMA)
+-- 3. LÓGICA DO JOGO (OTIMIZADA COM HIT KILL)
 -- ===========================================================================
 local rs = game:GetService("ReplicatedStorage")
 local weaponEvent = rs:FindFirstChild("WeaponEvent")
 
+-- Função para encontrar o Rakoof (chefe principal)
 local function getBoss()
     for _, v in pairs(workspace:GetDescendants()) do
         if v.Name:lower():find("rakoof") or v.Name == "Rake" then
             local hum = v:FindFirstChildOfClass("Humanoid")
-            if hum and hum.Health > 0 then return v end
+            if hum and hum.Health > 0 then return v, hum end
         end
     end
-    return nil
+    return nil, nil
 end
 
+-- Função para encontrar outros NPCs que podem causar dano
+local function getOtherHostileNPCs()
+    local hostileNPCs = {}
+    for _, v in pairs(workspace:GetDescendants()) do
+        -- Verifica se é um NPC (tem Humanoid) e se não é o jogador
+        if v:FindFirstChildOfClass("Humanoid") and not game.Players:GetPlayerFromCharacter(v) then
+            -- Verifica se o nome é comum para NPCs hostis (Scratcher, Zombie, etc.)
+            local name = v.Name:lower()
+            if name:find("scratcher") or name:find("zombie") or name:find("monster") or name:find("enemy") then
+                local hum = v:FindFirstChildOfClass("Humanoid")
+                if hum and hum.Health > 0 then
+                    table.insert(hostileNPCs, v)
+                end
+            end
+        end
+    end
+    return hostileNPCs
+end
+
+-- Função de Hit Kill: Mata instantaneamente o alvo
+local function hitKill(target)
+    if target then
+        local hum = target:FindFirstChildOfClass("Humanoid")
+        if hum then
+            hum.Health = 0
+            return true
+        end
+    end
+    return false
+end
+
+-- Função para equipar a melhor arma (apenas para garantir que o jogador tenha uma ferramenta equipada)
 local function equipBest()
     local best, bestDps = nil, 0
     local items = {}
@@ -182,56 +215,47 @@ local function equipBest()
     end
 end
 
--- Botões e Funções
-addButton("🎯 Matar Rakoof", function()
-    local boss = getBoss()
-    if boss then boss.Humanoid.Health = 0 end
-end)
+-- ===========================================================================
+-- 4. INTERFACE DO USUÁRIO (BOTÕES E TOGGLES)
+-- ===========================================================================
 
-addButton("🔪 Equipar Melhor", equipBest)
-
-addToggle("🛡️ God Mode", function(v)
+-- God Mode com vida em 10k e regeneração instantânea
+addToggle("🛡️ God Mode (10k Vida)", function(v)
     spawn(function()
         while v do
             local c = player.Character
             if c and c:FindFirstChildOfClass("Humanoid") then
-                c.Humanoid.Health = c.Humanoid.MaxHealth
+                local hum = c.Humanoid
+                hum.MaxHealth = 10000
+                hum.Health = 10000
             end
-            wait(0.1)
+            wait(0.1) -- Regeneração instantânea
         end
     end)
 end)
 
-addToggle("⚡ Auto Farm", function(v)
+-- Auto Farm com Hit Kill (procura NPCs hostis e os mata)
+addToggle("⚡ Auto Farm (Hit Kill)", function(v)
     spawn(function()
         while v do
-            local boss = getBoss()
-            if boss and weaponEvent then
-                pcall(function()
-                    weaponEvent:FireServer("Swing", boss)
-                end)
-            end
-            wait(0.5) -- Intervalo um pouco maior para evitar suspeitas
-        end
-    end)
-end)
-
-addToggle("🔋 Stamina Infinita", function(v)
-    spawn(function()
-        while v do
-            local c = player.Character
-            if c then
-                local h = c:FindFirstChildOfClass("Humanoid")
-                if h then
-                    local s = h:FindFirstChild("Stamina")
-                    if s then s.Value = 100 end
-                    h:SetStateEnabled(Enum.HumanoidStateType.Running, true)
+            local boss, _ = getBoss()
+            local hostileNPCs = getOtherHostileNPCs()
+            
+            -- Prioriza o Rakoof
+            if boss then
+                hitKill(boss)
+            -- Depois mata outros NPCs hostis
+            elseif #hostileNPCs > 0 then
+                for _, npc in ipairs(hostileNPCs) do
+                    hitKill(npc)
                 end
             end
-            wait(0.1)
+            wait(0.5) -- Intervalo maior para evitar suspeitas
         end
     end)
 end)
+
+addButton("🔪 Equipar Melhor Arma", equipBest)
 
 addButton("🚀 Teleporte Seguro", function()
     local c = player.Character
@@ -240,4 +264,4 @@ addButton("🚀 Teleporte Seguro", function()
     end
 end)
 
-print("✅ Script Furtivo carregado! Interface camuflada com gethui e nomes aleatórios.")
+print("✅ Script Otimizado carregado! God Mode (10k), Auto Farm (Hit Kill) e Equipar Arma ativos.")
