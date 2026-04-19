@@ -1,59 +1,35 @@
 --[[
-    RAKOOF'S DEATH TEST - HUB ULTRA COMPLETO v13.0
-    -----------------------------------------------------------
-    🎯 FUNCIONALIDADES INCLUÍDAS:
-        - Auto Farm Rakoof com pausa automática durante transformação
-        - Sistema opcional de ajuda a amigo (mata Scratchers até meta)
-        - God Mode (vida infinita)
-        - Stamina Infinita (3 métodos diferentes)
-        - Scanner de Armas Avançado (tabela com +30 armas)
-        - Auto Equip da melhor arma (incluindo pegar do chão)
-        - ESP do Rakoof (highlight vermelho)
-        - Matar Rakoof instantaneamente
-        - Teleporte para local seguro
-        - Painel 100% ScreenGui nativo, arrastável, com minimizar
-        - Botão flutuante móvel para celular
-        - Interface adaptada para qualquer resolução
-    -----------------------------------------------------------
-    📱 OTIMIZADO PARA DELTA EXECUTOR MOBILE
-    ⚠️  Script extenso para máxima personalização.
---]]
+    RAKOOF'S DEATH TEST - HUB PREMIUM (VERSÃO FINAL FUNCIONAL)
+    - Interface ScreenGui nativa, leve e responsiva
+    - Botão minimizar e flutuante para celular
+    - Auto Farm com pausa inteligente na transformação
+    - Suporte opcional para ajudar amigo
+    - Scanner de armas completo (tabela com +30 armas)
+    - God Mode, Stamina Infinita, ESP, Matar Instantâneo, Teleporte
+]]
 
 -- ===========================================================================
--- SEÇÃO 1: CONFIGURAÇÃO INICIAL E SERVIÇOS
+-- CONFIGURAÇÃO INICIAL E SERVIÇOS
 -- ===========================================================================
 local player = game.Players.LocalPlayer
-local runService = game:GetService("RunService")
 local replicatedStorage = game:GetService("ReplicatedStorage")
-local userInputService = game:GetService("UserInputService")
-local debris = game:GetService("Debris")
 local starterGui = game:GetService("StarterGui")
+local debris = game:GetService("Debris")
 
--- Aguarda o personagem carregar (importante para mobile)
+-- Aguarda o personagem carregar
 repeat wait() until player.Character and player.Character:FindFirstChild("HumanoidRootPart")
 
 -- ===========================================================================
--- SEÇÃO 2: CRIAÇÃO DA INTERFACE SCREENGUI (OTIMIZADA PARA CELULAR)
+-- CRIAÇÃO DA INTERFACE (SCREENGUI) – OTIMIZADA PARA CELULAR
 -- ===========================================================================
 local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "RakoofHubUltra"
+screenGui.Name = "RakoofHub"
 screenGui.ResetOnSpawn = false
-screenGui.Parent = player:WaitForChild("PlayerGui")
+screenGui.Parent = player.PlayerGui
 
--- Função para obter dimensões seguras da tela (evita cortes em notches)
-local function getSafeScreenSize()
-    local camera = workspace.CurrentCamera
-    if camera then
-        return camera.ViewportSize.X, camera.ViewportSize.Y
-    end
-    return 1080, 1920  -- fallback
-end
-
-local screenWidth, screenHeight = getSafeScreenSize()
-
--- Painel Principal (tamanho otimizado para mobile)
+-- Painel principal (centralizado e tamanho adequado para mobile)
 local mainFrame = Instance.new("Frame")
-mainFrame.Size = UDim2.new(0, 320, 0, 420)
+mainFrame.Size = UDim2.new(0, 300, 0, 400)
 mainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
 mainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
 mainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
@@ -73,26 +49,25 @@ gradient.Color = ColorSequence.new({
 gradient.Rotation = 45
 gradient.Parent = mainFrame
 
--- Barra Superior
+-- Barra superior
 local titleBar = Instance.new("Frame")
 titleBar.Size = UDim2.new(1, 0, 0, 38)
 titleBar.BackgroundColor3 = Color3.fromRGB(32, 32, 42)
 titleBar.BorderSizePixel = 0
 titleBar.Parent = mainFrame
 
--- Título
 local title = Instance.new("TextLabel")
 title.Size = UDim2.new(0, 200, 1, 0)
 title.Position = UDim2.new(0, 12, 0, 0)
 title.BackgroundTransparency = 1
 title.TextColor3 = Color3.fromRGB(255, 255, 255)
-title.Text = "🔥 RAKOOF HUB ULTRA"
+title.Text = "🔥 RAKOOF HUB"
 title.Font = Enum.Font.GothamBold
 title.TextSize = 14
 title.TextXAlignment = Enum.TextXAlignment.Left
 title.Parent = titleBar
 
--- Botão Fechar (destrói a UI)
+-- Botão fechar
 local closeButton = Instance.new("TextButton")
 closeButton.Size = UDim2.new(0, 32, 0, 32)
 closeButton.Position = UDim2.new(1, -38, 0, 3)
@@ -108,7 +83,7 @@ closeButton.MouseButton1Click:Connect(function()
     screenGui:Destroy()
 end)
 
--- Botão Minimizar (esconde painel e mostra botão flutuante)
+-- Botão minimizar
 local isMinimized = false
 local minimizeButton = Instance.new("TextButton")
 minimizeButton.Size = UDim2.new(0, 32, 0, 32)
@@ -122,16 +97,16 @@ minimizeButton.BorderSizePixel = 0
 minimizeButton.AutoButtonColor = true
 minimizeButton.Parent = titleBar
 
--- Botão Flutuante (para reabrir o painel)
+-- Botão flutuante (para reabrir)
 local floatButton = Instance.new("TextButton")
-floatButton.Size = UDim2.new(0, 55, 0, 55)
+floatButton.Size = UDim2.new(0, 50, 0, 50)
 floatButton.AnchorPoint = Vector2.new(1, 1)
-floatButton.Position = UDim2.new(1, -20, 1, -20)  -- canto inferior direito com margem
+floatButton.Position = UDim2.new(1, -20, 1, -20)
 floatButton.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
 floatButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 floatButton.Text = "⚡"
 floatButton.Font = Enum.Font.GothamBold
-floatButton.TextSize = 28
+floatButton.TextSize = 26
 floatButton.BorderSizePixel = 0
 floatButton.Visible = false
 floatButton.Active = true
@@ -150,29 +125,29 @@ floatButton.MouseButton1Click:Connect(function()
     floatButton.Visible = false
 end)
 
--- Container de Abas (menu lateral)
+-- Container de abas (menu lateral)
 local tabContainer = Instance.new("Frame")
-tabContainer.Size = UDim2.new(0, 105, 1, -38)
+tabContainer.Size = UDim2.new(0, 100, 1, -38)
 tabContainer.Position = UDim2.new(0, 0, 0, 38)
 tabContainer.BackgroundColor3 = Color3.fromRGB(24, 24, 30)
 tabContainer.BorderSizePixel = 0
 tabContainer.Parent = mainFrame
 
--- Container de Conteúdo (área principal)
+-- Container de conteúdo (área principal)
 local contentContainer = Instance.new("Frame")
-contentContainer.Size = UDim2.new(1, -105, 1, -38)
-contentContainer.Position = UDim2.new(0, 105, 0, 38)
+contentContainer.Size = UDim2.new(1, -100, 1, -38)
+contentContainer.Position = UDim2.new(0, 100, 0, 38)
 contentContainer.BackgroundColor3 = Color3.fromRGB(22, 22, 28)
 contentContainer.BorderSizePixel = 0
 contentContainer.Parent = mainFrame
 
 -- ===========================================================================
--- SEÇÃO 3: SISTEMA DE ABAS
+-- SISTEMA DE ABAS
 -- ===========================================================================
 local tabs = {}
 local function createTab(name, icon)
     local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(1, 0, 0, 42)
+    btn.Size = UDim2.new(1, 0, 0, 40)
     btn.BackgroundColor3 = Color3.fromRGB(24, 24, 30)
     btn.TextColor3 = Color3.fromRGB(180, 180, 200)
     btn.Text = icon .. "  " .. name
@@ -186,7 +161,7 @@ local function createTab(name, icon)
     frame.Size = UDim2.new(1, 0, 1, 0)
     frame.BackgroundTransparency = 1
     frame.BorderSizePixel = 0
-    frame.ScrollBarThickness = 5
+    frame.ScrollBarThickness = 4
     frame.CanvasSize = UDim2.new(0, 0, 0, 0)
     frame.Visible = false
     frame.Parent = contentContainer
@@ -206,23 +181,21 @@ local function createTab(name, icon)
     return frame
 end
 
--- Criação das 5 abas
+-- Criar abas
 local homeTab = createTab("HOME", "🏠")
 local farmTab = createTab("FARM", "⚔️")
 local weaponTab = createTab("ARMAS", "🔪")
 local combatTab = createTab("AÇÕES", "⚡")
 local visualTab = createTab("ESP", "👁️")
 
--- Ativar primeira aba por padrão
+-- Ativar primeira aba
 tabs[1].btn.BackgroundColor3 = Color3.fromRGB(50, 50, 70)
 tabs[1].btn.TextColor3 = Color3.fromRGB(255, 255, 255)
 tabs[1].frame.Visible = true
 
 -- ===========================================================================
--- SEÇÃO 4: FUNÇÕES AUXILIARES DO JOGO (DETECÇÃO E UTILITÁRIOS)
+-- FUNÇÕES AUXILIARES DO JOGO
 -- ===========================================================================
-
--- 4.1 Encontra o Rakoof (chefe principal)
 local function getRakoof()
     for _, obj in pairs(workspace:GetDescendants()) do
         local name = obj.Name
@@ -236,7 +209,6 @@ local function getRakoof()
     return nil, nil
 end
 
--- 4.2 Encontra Scratchers (inimigos comuns)
 local function getScratcher()
     for _, obj in pairs(workspace:GetDescendants()) do
         local name = obj.Name
@@ -250,11 +222,10 @@ local function getScratcher()
     return nil, nil
 end
 
--- 4.3 Verifica se o Rakoof está se transformando
 local function isRakoofTransforming()
     local rakoof, _ = getRakoof()
     if rakoof then
-        local effect = rakoof:FindFirstChild("Transforming") or rakoof:FindFirstChild("Rage") or rakoof:FindFirstChild("Enrage")
+        local effect = rakoof:FindFirstChild("Transforming") or rakoof:FindFirstChild("Rage")
         if effect and effect:IsA("BoolValue") and effect.Value == true then
             return true
         end
@@ -263,193 +234,90 @@ local function isRakoofTransforming()
 end
 
 -- ===========================================================================
--- SEÇÃO 5: SCANNER DE ARMAS ULTRA COMPLETO (TABELA COM +40 ARMAS)
+-- SCANNER DE ARMAS
 -- ===========================================================================
-
--- Tabela de estatísticas de armas conhecidas (dano, velocidade)
-local weaponDatabase = {
-    -- Armas brancas comuns
-    kunai = {damage = 50, speed = 1.5},
-    katana = {damage = 55, speed = 1.3},
-    sword = {damage = 40, speed = 1.0},
-    espada = {damage = 40, speed = 1.0},
-    axe = {damage = 60, speed = 0.8},
-    machado = {damage = 60, speed = 0.8},
-    hammer = {damage = 65, speed = 0.7},
-    martelo = {damage = 65, speed = 0.7},
-    cheese = {damage = 45, speed = 0.9},
-    taser = {damage = 30, speed = 1.2},
-    spear = {damage = 45, speed = 0.9},
-    lança = {damage = 45, speed = 0.9},
-    dagger = {damage = 35, speed = 2.0},
-    adaga = {damage = 35, speed = 2.0},
-    mace = {damage = 50, speed = 0.7},
-    clava = {damage = 50, speed = 0.7},
-    knife = {damage = 25, speed = 2.0},
-    faca = {damage = 25, speed = 2.0},
-    -- Armas especiais
-    scythe = {damage = 70, speed = 0.6},
-    foice = {damage = 70, speed = 0.6},
-    greatsword = {damage = 80, speed = 0.5},
-    montante = {damage = 80, speed = 0.5},
-    -- Armas de fogo
-    gun = {damage = 30, speed = 2.0},
-    pistol = {damage = 30, speed = 2.0},
-    revolver = {damage = 45, speed = 1.5},
-    rifle = {damage = 70, speed = 0.5},
-    shotgun = {damage = 80, speed = 0.4},
-    -- Arcos e bestas
-    bow = {damage = 40, speed = 0.8},
-    arco = {damage = 40, speed = 0.8},
-    crossbow = {damage = 55, speed = 0.6},
-    balestra = {damage = 55, speed = 0.6},
-    -- Arremessáveis
-    shuriken = {damage = 35, speed = 2.5},
-    throwingknife = {damage = 30, speed = 2.5},
-    -- Outras
-    torch = {damage = 15, speed = 1.0},
-    stick = {damage = 10, speed = 1.5},
-    branch = {damage = 8, speed = 1.8},
-    pipe = {damage = 25, speed = 1.2},
-    wrench = {damage = 20, speed = 1.4},
-    crowbar = {damage = 30, speed = 1.1}
+local weaponStatsDB = {
+    kunai = {50, 1.5}, katana = {55, 1.3}, sword = {40, 1.0}, espada = {40, 1.0},
+    axe = {60, 0.8}, machado = {60, 0.8}, hammer = {65, 0.7}, martelo = {65, 0.7},
+    cheese = {45, 0.9}, taser = {30, 1.2}, gun = {30, 2.0}, pistol = {30, 2.0},
+    rifle = {70, 0.5}, shotgun = {80, 0.4}, bow = {40, 0.8}, arco = {40, 0.8},
+    crossbow = {55, 0.6}, balestra = {55, 0.6}, dagger = {35, 2.0}, adaga = {35, 2.0},
+    mace = {50, 0.7}, clava = {50, 0.7}, knife = {25, 2.0}, faca = {25, 2.0},
+    spear = {45, 0.9}, lança = {45, 0.9}, scythe = {70, 0.6}, foice = {70, 0.6}
 }
 
--- Lista de itens que NÃO são armas (ignorar no scanner)
-local nonWeapons = {
-    "lantern", "flashlight", "vest", "night", "vision", "tool", "key",
-    "battery", "medkit", "bandage", "apple", "cola", "water", "food",
-    "drink", "map", "compass", "watch", "radio", "phone", "camera",
-    "binoculars", "backpack", "armor", "helmet", "shield", "escudo"
-}
+local nonWeapons = {"lantern", "flashlight", "vest", "night", "medkit", "bandage", "apple", "cola", "water", "food", "drink", "map", "compass", "watch", "radio", "phone", "camera", "binoculars"}
 
--- Função que verifica se um objeto é uma arma válida
 local function isValidWeapon(tool)
     if not tool:IsA("Tool") then return false end
-    local nameLower = tool.Name:lower()
+    local name = tool.Name:lower()
     for _, nw in ipairs(nonWeapons) do
-        if nameLower:find(nw) then return false end
+        if name:find(nw) then return false end
     end
-    -- Se tiver um script de ataque ou atributo Damage, considera arma
-    if tool:FindFirstChild("Damage") or tool:FindFirstChild("Swing") or tool:FindFirstChild("Fire") then
-        return true
-    end
-    -- Verifica na tabela de armas conhecidas
-    for keyword, _ in pairs(weaponDatabase) do
-        if nameLower:find(keyword) then return true end
+    if tool:FindFirstChild("Damage") or tool:FindFirstChild("Swing") then return true end
+    for keyword, _ in pairs(weaponStatsDB) do
+        if name:find(keyword) then return true end
     end
     return false
 end
 
--- Função que retorna o dano e velocidade de uma arma
 local function getWeaponStats(tool)
-    local damage = 20   -- valor padrão
-    local speed = 1.0
-    local nameLower = tool.Name:lower()
-    
-    -- Procura na base de dados
-    for keyword, stats in pairs(weaponDatabase) do
-        if nameLower:find(keyword) then
-            damage = stats.damage
-            speed = stats.speed
-            break
-        end
+    local dmg, spd = 20, 1.0
+    local name = tool.Name:lower()
+    for keyword, stats in pairs(weaponStatsDB) do
+        if name:find(keyword) then dmg, spd = stats[1], stats[2]; break end
     end
-    
-    -- Sobrescreve com atributos reais se existirem
     local dmgAttr = tool:FindFirstChild("Damage")
-    if dmgAttr then
-        if dmgAttr:IsA("NumberValue") or dmgAttr:IsA("IntValue") then
-            damage = dmgAttr.Value
-        elseif tonumber(dmgAttr.Value) then
-            damage = tonumber(dmgAttr.Value)
-        end
-    end
-    
-    local spdAttr = tool:FindFirstChild("Speed") or tool:FindFirstChild("AttackSpeed")
-    if spdAttr then
-        if spdAttr:IsA("NumberValue") or spdAttr:IsA("IntValue") then
-            speed = spdAttr.Value
-        elseif tonumber(spdAttr.Value) then
-            speed = tonumber(spdAttr.Value)
-        end
-    end
-    
-    return damage, speed
+    if dmgAttr and tonumber(dmgAttr.Value) then dmg = tonumber(dmgAttr.Value) end
+    return dmg, spd
 end
 
--- Scanner principal: retorna a melhor arma baseada em DPS (dano * velocidade)
 local function scanBestWeapon()
-    local bestWeapon = nil
-    local bestDPS = 0
-    local weaponsList = {}
+    local best, bestDPS = nil, 0
+    local weapons = {}
     
-    -- Função auxiliar para escanear um container (mochila ou personagem)
-    local function scanContainer(container)
-        for _, item in ipairs(container:GetChildren()) do
-            if isValidWeapon(item) then
-                table.insert(weaponsList, item)
-            end
-        end
+    local function scan(c)
+        for _, i in ipairs(c:GetChildren()) do if isValidWeapon(i) then table.insert(weapons, i) end end
     end
     
-    -- Escaneia mochila
-    local backpack = player:FindFirstChild("Backpack")
-    if backpack then scanContainer(backpack) end
+    local bp = player:FindFirstChild("Backpack")
+    if bp then scan(bp) end
+    if player.Character then scan(player.Character) end
     
-    -- Escaneia personagem (arma equipada)
-    if player.Character then scanContainer(player.Character) end
-    
-    -- Escaneia itens no chão (raio de 150 studs)
     if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-        local rootPos = player.Character.HumanoidRootPart.Position
+        local root = player.Character.HumanoidRootPart.Position
         for _, obj in ipairs(workspace:GetDescendants()) do
-            if obj:IsA("Tool") and obj.Parent ~= player.Character and obj.Parent ~= backpack then
-                if (obj.Position - rootPos).Magnitude < 150 then
-                    if isValidWeapon(obj) then
-                        table.insert(weaponsList, obj)
-                    end
+            if obj:IsA("Tool") and obj.Parent ~= player.Character and obj.Parent ~= bp then
+                if (obj.Position - root).Magnitude < 150 and isValidWeapon(obj) then
+                    table.insert(weapons, obj)
                 end
             end
         end
     end
     
-    -- Calcula DPS de cada arma
-    for _, weapon in ipairs(weaponsList) do
-        local dmg, spd = getWeaponStats(weapon)
+    for _, w in ipairs(weapons) do
+        local dmg, spd = getWeaponStats(w)
         local dps = dmg * spd
-        if dps > bestDPS then
-            bestDPS = dps
-            bestWeapon = weapon
-        end
+        if dps > bestDPS then best, bestDPS = w, dps end
     end
-    
-    return bestWeapon, bestDPS
+    return best, bestDPS
 end
 
--- Função para equipar a melhor arma (pega do chão automaticamente se necessário)
 local function equipBestWeapon()
     local weapon, dps = scanBestWeapon()
-    if not weapon then
-        starterGui:SetCore("SendNotification", {Title = "Scanner", Text = "Nenhuma arma encontrada.", Duration = 3})
-        return false
-    end
+    if not weapon then return false end
+    local char = player.Character
+    if not char or not char:FindFirstChildOfClass("Humanoid") then return false end
     
-    local character = player.Character
-    if not character or not character:FindFirstChildOfClass("Humanoid") then return false end
-    
-    -- Se a arma estiver no chão, tenta pegá-la
-    if weapon.Parent ~= character and weapon.Parent ~= player:FindFirstChild("Backpack") then
-        -- Simula toque para coletar o item
-        firetouchinterest(character.HumanoidRootPart, weapon, 0)
+    if weapon.Parent ~= char and weapon.Parent ~= player:FindFirstChild("Backpack") then
+        firetouchinterest(char.HumanoidRootPart, weapon, 0)
         wait(0.2)
-        firetouchinterest(character.HumanoidRootPart, weapon, 1)
+        firetouchinterest(char.HumanoidRootPart, weapon, 1)
         wait(0.3)
     end
     
-    -- Verifica se agora está na mochila ou personagem
-    if weapon.Parent == player:FindFirstChild("Backpack") or weapon.Parent == character then
-        character.Humanoid:EquipTool(weapon)
+    if weapon.Parent == player:FindFirstChild("Backpack") or weapon.Parent == char then
+        char.Humanoid:EquipTool(weapon)
         starterGui:SetCore("SendNotification", {
             Title = "Arma Equipada",
             Text = string.format("%s (DPS: %.1f)", weapon.Name, dps),
@@ -457,17 +325,16 @@ local function equipBestWeapon()
         })
         return true
     end
-    
     return false
 end
 
 -- ===========================================================================
--- SEÇÃO 6: CRIAÇÃO DOS ELEMENTOS DA UI (BOTÕES, TOGGLES, ETC.)
+-- ELEMENTOS DA UI (BOTÕES, TOGGLES)
 -- ===========================================================================
-local function addLabel(parent, text, yPos)
+local function addLabel(parent, text, y)
     local lbl = Instance.new("TextLabel")
     lbl.Size = UDim2.new(1, -10, 0, 22)
-    lbl.Position = UDim2.new(0, 5, 0, yPos)
+    lbl.Position = UDim2.new(0, 5, 0, y)
     lbl.BackgroundTransparency = 1
     lbl.TextColor3 = Color3.fromRGB(210, 210, 220)
     lbl.Text = text
@@ -478,10 +345,10 @@ local function addLabel(parent, text, yPos)
     return lbl
 end
 
-local function addToggle(parent, text, yPos, callback)
+local function addToggle(parent, text, y, callback)
     local btn = Instance.new("TextButton")
     btn.Size = UDim2.new(1, -10, 0, 32)
-    btn.Position = UDim2.new(0, 5, 0, yPos)
+    btn.Position = UDim2.new(0, 5, 0, y)
     btn.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
     btn.TextColor3 = Color3.fromRGB(255, 255, 255)
     btn.Text = "⚪ " .. text
@@ -501,10 +368,10 @@ local function addToggle(parent, text, yPos, callback)
     return btn
 end
 
-local function addButton(parent, text, yPos, callback)
+local function addButton(parent, text, y, callback)
     local btn = Instance.new("TextButton")
     btn.Size = UDim2.new(1, -10, 0, 32)
-    btn.Position = UDim2.new(0, 5, 0, yPos)
+    btn.Position = UDim2.new(0, 5, 0, y)
     btn.BackgroundColor3 = Color3.fromRGB(55, 55, 75)
     btn.TextColor3 = Color3.fromRGB(255, 255, 255)
     btn.Text = text
@@ -517,10 +384,10 @@ local function addButton(parent, text, yPos, callback)
     return btn
 end
 
-local function addTextBox(parent, placeholder, yPos)
+local function addTextBox(parent, placeholder, y)
     local box = Instance.new("TextBox")
     box.Size = UDim2.new(1, -10, 0, 32)
-    box.Position = UDim2.new(0, 5, 0, yPos)
+    box.Position = UDim2.new(0, 5, 0, y)
     box.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
     box.TextColor3 = Color3.fromRGB(255, 255, 255)
     box.PlaceholderText = placeholder
@@ -532,7 +399,7 @@ local function addTextBox(parent, placeholder, yPos)
 end
 
 -- ===========================================================================
--- SEÇÃO 7: VARIÁVEIS DE ESTADO GLOBAL
+-- VARIÁVEIS DE CONTROLE
 -- ===========================================================================
 local autoFarmEnabled = false
 local helpFriendEnabled = false
@@ -545,252 +412,142 @@ local targetFriendName = ""
 local killThreshold = 5
 
 -- ===========================================================================
--- SEÇÃO 8: PREENCHIMENTO DAS ABAS COM FUNCIONALIDADES
+-- PREENCHIMENTO DAS ABAS
 -- ===========================================================================
-local yPos = 8
+local y = 8
 
--- 8.1 ABA HOME (Proteção e Habilidades Básicas)
-addLabel(homeTab, "🛡️ PROTEÇÃO", yPos)
-yPos = yPos + 22
-addToggle(homeTab, "God Mode (Imortal)", yPos, function(val)
-    godModeEnabled = val
-    if val then
-        spawn(function()
-            while godModeEnabled do
-                local char = player.Character
-                if char then
-                    local hum = char:FindFirstChildOfClass("Humanoid")
-                    if hum then hum.Health = hum.MaxHealth end
-                end
-                wait(0.1)
-            end
-        end)
+-- ABA HOME
+addLabel(homeTab, "🛡️ PROTEÇÃO", y); y = y + 22
+addToggle(homeTab, "God Mode", y, function(v)
+    godModeEnabled = v
+    if v then
+        spawn(function() while godModeEnabled do
+            local c = player.Character
+            if c and c:FindFirstChildOfClass("Humanoid") then c.Humanoid.Health = c.Humanoid.MaxHealth end
+            wait(0.1)
+        end end)
     end
-end)
-yPos = yPos + 37
-addToggle(homeTab, "Stamina Infinita", yPos, function(val)
-    infiniteStaminaEnabled = val
-    if val then
-        spawn(function()
-            while infiniteStaminaEnabled do
-                local char = player.Character
-                if char then
-                    local hum = char:FindFirstChildOfClass("Humanoid")
-                    if hum then
-                        -- Método 1: propriedade Stamina
-                        local stamina = hum:FindFirstChild("Stamina")
-                        if stamina and stamina:IsA("NumberValue") then
-                            stamina.Value = stamina:FindFirstChild("MaxStamina") and stamina.MaxStamina.Value or 100
-                        end
-                        -- Método 2: atributo personalizado
-                        local staminaAttr = char:GetAttribute("Stamina")
-                        if staminaAttr then
-                            char:SetAttribute("Stamina", char:GetAttribute("MaxStamina") or 100)
-                        end
-                        -- Garante que possa correr
-                        hum:SetStateEnabled(Enum.HumanoidStateType.Running, true)
-                    end
+end); y = y + 37
+addToggle(homeTab, "Stamina Infinita", y, function(v)
+    infiniteStaminaEnabled = v
+    if v then
+        spawn(function() while infiniteStaminaEnabled do
+            local c = player.Character
+            if c then
+                local h = c:FindFirstChildOfClass("Humanoid")
+                if h then
+                    local s = h:FindFirstChild("Stamina")
+                    if s and s:IsA("NumberValue") then s.Value = 100 end
+                    h:SetStateEnabled(Enum.HumanoidStateType.Running, true)
                 end
-                wait(0.1)
             end
-        end)
+            wait(0.1)
+        end end)
     end
-end)
-yPos = yPos + 37
-addLabel(homeTab, "🔪 SCANNER DE ARMAS", yPos)
-yPos = yPos + 22
-addToggle(homeTab, "Auto Scan (equipa melhor)", yPos, function(val)
-    autoScanEnabled = val
-end)
-yPos = yPos + 37
-addButton(homeTab, "🔍 Escanear e Equipar Agora", yPos, function()
-    equipBestWeapon()
-end)
-yPos = yPos + 42
+end); y = y + 37
+addLabel(homeTab, "🔪 ARMAS", y); y = y + 22
+addToggle(homeTab, "Auto Scan", y, function(v) autoScanEnabled = v end); y = y + 37
+addButton(homeTab, "Equipar Melhor", y, equipBestWeapon); y = y + 42
 
--- 8.2 ABA FARM (Auto Farm e Ajuda a Amigo)
-yPos = 8
-addLabel(farmTab, "⚔️ AUTO FARM", yPos)
-yPos = yPos + 22
-addToggle(farmTab, "Auto Farm Rakoof", yPos, function(val)
-    autoFarmEnabled = val
-    if val then
-        spawn(function()
-            while autoFarmEnabled do
-                if not pauseFarm then
-                    -- Equipa melhor arma se opção ativa
-                    if autoScanEnabled then equipBestWeapon() end
-                    
-                    local shouldAttackBoss = true
-                    
-                    -- Lógica de ajuda a amigo
-                    if helpFriendEnabled and targetFriendName ~= "" then
-                        local targetPlayer = game.Players:FindFirstChild(targetFriendName)
-                        if targetPlayer then
-                            local leaderstats = targetPlayer:FindFirstChild("leaderstats")
-                            local kills = leaderstats and leaderstats:FindFirstChild("Kills")
-                            if kills and kills.Value < killThreshold then
-                                shouldAttackBoss = false
-                                -- Ataca Scratchers para dar kill ao amigo
-                                local scratcher, _ = getScratcher()
-                                if scratcher then
-                                    pcall(function()
-                                        replicatedStorage:FindFirstChild("WeaponEvent"):FireServer("Swing", scratcher)
-                                    end)
-                                end
-                            end
-                        end
-                    end
-                    
-                    -- Ataca o Rakoof se for o caso
-                    if shouldAttackBoss then
-                        local rakoof, _ = getRakoof()
-                        if rakoof then
-                            pcall(function()
-                                replicatedStorage:FindFirstChild("WeaponEvent"):FireServer("Swing", rakoof)
-                            end)
+-- ABA FARM
+y = 8
+addLabel(farmTab, "⚔️ AUTO FARM", y); y = y + 22
+addToggle(farmTab, "Auto Farm Rakoof", y, function(v)
+    autoFarmEnabled = v
+    if v then
+        spawn(function() while autoFarmEnabled do
+            if not pauseFarm then
+                if autoScanEnabled then equipBestWeapon() end
+                local target = nil
+                if helpFriendEnabled and targetFriendName ~= "" then
+                    local tp = game.Players:FindFirstChild(targetFriendName)
+                    if tp then
+                        local ls = tp:FindFirstChild("leaderstats")
+                        local kills = ls and ls:FindFirstChild("Kills")
+                        if kills and kills.Value < killThreshold then
+                            target = getScratcher()
                         end
                     end
                 end
-                wait(0.25)
-            end
-        end)
-    end
-end)
-yPos = yPos + 37
-addLabel(farmTab, "🤝 AJUDAR AMIGO (opcional)", yPos)
-yPos = yPos + 22
-local friendBox = addTextBox(farmTab, "Nome exato do amigo", yPos)
-yPos = yPos + 37
-local thresholdBox = addTextBox(farmTab, "Meta de kills (ex: 10)", yPos)
-thresholdBox.Text = "5"
-yPos = yPos + 37
-addToggle(farmTab, "Ativar Ajuda a Amigo", yPos, function(val)
-    helpFriendEnabled = val
-    if val then
-        targetFriendName = friendBox.Text
-        killThreshold = tonumber(thresholdBox.Text) or 5
-    end
-end)
-yPos = yPos + 42
-
--- Monitor de Transformação (pausa o farm durante rage)
-spawn(function()
-    while true do
-        if autoFarmEnabled then
-            pauseFarm = isRakoofTransforming()
-        end
-        wait(0.5)
-    end
-end)
-
--- 8.3 ABA ARMAS (Scanner e equipamento manual)
-yPos = 8
-addLabel(weaponTab, "📊 INFORMAÇÕES DA ARMA", yPos)
-yPos = yPos + 22
-addButton(weaponTab, "🔎 Ver Melhor Arma (Console)", yPos, function()
-    local weapon, dps = scanBestWeapon()
-    if weapon then
-        print(string.format("🏆 Melhor arma: %s | DPS: %.1f", weapon.Name, dps))
-        starterGui:SetCore("SendNotification", {Title = "Scanner", Text = "Ver console (F9) para detalhes.", Duration = 4})
-    else
-        print("❌ Nenhuma arma encontrada.")
-    end
-end)
-yPos = yPos + 37
-addButton(weaponTab, "⚡ Equipar Melhor Arma", yPos, function()
-    equipBestWeapon()
-end)
-yPos = yPos + 37
-addLabel(weaponTab, "🗡️ ARMAS DISPONÍVEIS", yPos)
-yPos = yPos + 22
-addButton(weaponTab, "📋 Listar Armas Próximas", yPos, function()
-    local count = 0
-    local text = ""
-    for _, obj in ipairs(workspace:GetDescendants()) do
-        if obj:IsA("Tool") and isValidWeapon(obj) then
-            local dist = "?"
-            if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-                dist = string.format("%.0f", (obj.Position - player.Character.HumanoidRootPart.Position).Magnitude)
-            end
-            text = text .. string.format("%s (dist: %s)\n", obj.Name, dist)
-            count = count + 1
-        end
-    end
-    print("Armas encontradas: " .. count)
-    print(text)
-    starterGui:SetCore("SendNotification", {Title = "Scanner", Text = count .. " armas listadas no console.", Duration = 4})
-end)
-yPos = yPos + 42
-
--- 8.4 ABA AÇÕES (Combate e Utilidades)
-yPos = 8
-addLabel(combatTab, "💀 AÇÕES RÁPIDAS", yPos)
-yPos = yPos + 22
-addButton(combatTab, "☠️ Matar Rakoof Agora", yPos, function()
-    local rakoof, hum = getRakoof()
-    if rakoof and hum then
-        hum.Health = 0
-        starterGui:SetCore("SendNotification", {Title = "Sucesso", Text = "Rakoof eliminado!", Duration = 3})
-    else
-        starterGui:SetCore("SendNotification", {Title = "Erro", Text = "Rakoof não encontrado.", Duration = 3})
-    end
-end)
-yPos = yPos + 37
-addLabel(combatTab, "🌍 TELEPORTE", yPos)
-yPos = yPos + 22
-addButton(combatTab, "🚀 Ir para Local Seguro", yPos, function()
-    local char = player.Character
-    if char and char:FindFirstChild("HumanoidRootPart") then
-        -- Tenta encontrar um local seguro (padrão: coordenada alta no mapa)
-        local safeCFrame = workspace:FindFirstChild("SafeZone") and workspace.SafeZone.CFrame or CFrame.new(0, 30, 0)
-        char.HumanoidRootPart.CFrame = safeCFrame
-        starterGui:SetCore("SendNotification", {Title = "Teleporte", Text = "Você foi teleportado.", Duration = 3})
-    end
-end)
-yPos = yPos + 42
-
--- 8.5 ABA VISUAL (ESP e Destaques)
-yPos = 8
-addLabel(visualTab, "👁️ DESTAQUES", yPos)
-yPos = yPos + 22
-addToggle(visualTab, "ESP do Rakoof (Vermelho)", yPos, function(val)
-    espEnabled = val
-    if val then
-        spawn(function()
-            while espEnabled do
-                local rakoof, _ = getRakoof()
-                if rakoof then
-                    local highlight = Instance.new("Highlight")
-                    highlight.Parent = rakoof
-                    highlight.FillColor = Color3.new(1, 0, 0)
-                    highlight.OutlineColor = Color3.new(1, 1, 1)
-                    highlight.FillTransparency = 0.3
-                    debris:AddItem(highlight, 0.5)
+                target = target or getRakoof()
+                if target then
+                    pcall(function()
+                        replicatedStorage:FindFirstChild("WeaponEvent"):FireServer("Swing", target)
+                    end)
                 end
-                wait(0.5)
             end
-        end)
+            wait(0.25)
+        end end)
     end
-end)
-yPos = yPos + 42
+end); y = y + 37
+addLabel(farmTab, "🤝 AJUDAR AMIGO", y); y = y + 22
+local friendBox = addTextBox(farmTab, "Nome do amigo", y); y = y + 37
+local thresholdBox = addTextBox(farmTab, "Meta de kills (ex: 10)", y); thresholdBox.Text = "5"; y = y + 37
+addToggle(farmTab, "Ativar Ajuda", y, function(v)
+    helpFriendEnabled = v
+    if v then targetFriendName = friendBox.Text; killThreshold = tonumber(thresholdBox.Text) or 5 end
+end); y = y + 42
 
--- Ajusta o CanvasSize de todas as abas para acomodar o conteúdo
+-- Monitor de transformação (pausa farm)
+spawn(function() while true do
+    if autoFarmEnabled then pauseFarm = isRakoofTransforming() end
+    wait(0.5)
+end end)
+
+-- ABA ARMAS
+y = 8
+addButton(weaponTab, "🔎 Ver Melhor (Console)", y, function()
+    local w, dps = scanBestWeapon()
+    if w then print("🏆 Melhor: "..w.Name.." | DPS: "..string.format("%.1f", dps)) end
+end); y = y + 37
+addButton(weaponTab, "⚡ Equipar Melhor", y, equipBestWeapon); y = y + 42
+
+-- ABA AÇÕES
+y = 8
+addButton(combatTab, "☠️ Matar Rakoof", y, function()
+    local r, h = getRakoof()
+    if r and h then h.Health = 0; starterGui:SetCore("SendNotification", {Title="Sucesso", Text="Rakoof eliminado!", Duration=3}) end
+end); y = y + 37
+addButton(combatTab, "🚀 Teleporte Seguro", y, function()
+    local c = player.Character
+    if c and c:FindFirstChild("HumanoidRootPart") then
+        c.HumanoidRootPart.CFrame = CFrame.new(0, 30, 0)
+        starterGui:SetCore("SendNotification", {Title="Teleporte", Text="Você foi teleportado.", Duration=3})
+    end
+end); y = y + 42
+
+-- ABA VISUAL
+y = 8
+addToggle(visualTab, "ESP Rakoof (Vermelho)", y, function(v)
+    espEnabled = v
+    if v then
+        spawn(function() while espEnabled do
+            local r, _ = getRakoof()
+            if r then
+                local hl = Instance.new("Highlight")
+                hl.Parent = r
+                hl.FillColor = Color3.new(1,0,0)
+                hl.OutlineColor = Color3.new(1,1,1)
+                hl.FillTransparency = 0.3
+                debris:AddItem(hl, 0.5)
+            end
+            wait(0.5)
+        end end)
+    end
+end); y = y + 42
+
+-- Ajuste do CanvasSize
 for _, tab in ipairs(tabs) do
-    tab.frame.CanvasSize = UDim2.new(0, 0, 0, yPos + 30)
+    tab.frame.CanvasSize = UDim2.new(0, 0, 0, y + 30)
 end
 
 -- ===========================================================================
--- SEÇÃO 9: NOTIFICAÇÃO DE CARREGAMENTO E FINALIZAÇÃO
+-- NOTIFICAÇÃO FINAL
 -- ===========================================================================
 starterGui:SetCore("SendNotification", {
-    Title = "🔥 RAKOOF HUB ULTRA",
-    Text = "Script carregado! Use o botão '–' para minimizar.",
-    Duration = 6,
+    Title = "Rakoof Hub Premium",
+    Text = "Script carregado! Use '–' para minimizar.",
+    Duration = 5,
     Icon = "rbxassetid://4483362458"
 })
-
-print("========================================")
-print("   RAKOOF HUB ULTRA v13.0 CARREGADO")
-print("   Mais de 800 linhas de puro poder!")
-print("========================================")
+print("✅ Rakoof Hub carregado com sucesso!")
