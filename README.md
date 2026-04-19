@@ -1,9 +1,40 @@
--- RAKOOF'S DEATH TEST - SCRIPT ENXUTO E FUNCIONAL
+-- RAKOOF'S DEATH TEST - SCRIPT COM BYPASS (TENTATIVA ANTI-KICK)
 
+-- ===========================================================================
+-- BYPASS SIMPLES (Tenta remover funções de Kick e anti-cheats básicos)
+-- ===========================================================================
+local success, err = pcall(function()
+    -- 1. Tenta "sequestrar" a função Kick do jogador local para que ela não funcione
+    local LocalPlayer = game:GetService("Players").LocalPlayer
+    if LocalPlayer then
+        local KickFunction = LocalPlayer.Kick
+        LocalPlayer.Kick = function(...) return end
+    end
+
+    -- 2. Tenta encontrar e neutralizar scripts com nomes suspeitos
+    for _, obj in pairs(game:GetDescendants()) do
+        local name = obj.Name:lower()
+        if obj:IsA("Script") or obj:IsA("LocalScript") then
+            if name:find("anti") or name:find("kick") or name:find("detect") or name:find("ban") or name:find("cheat") then
+                obj.Enabled = false
+            end
+        elseif obj:IsA("RemoteEvent") and (name:find("kick") or name:find("ban") or name:find("report")) then
+            obj:Destroy()
+        end
+    end
+end)
+
+if not success then
+    print("Bypass não pôde ser aplicado completamente. O jogo pode ter proteções mais fortes.")
+end
+
+-- ===========================================================================
+-- SCRIPT PRINCIPAL (COM FUNÇÕES DE SEGURANÇA ADICIONAIS)
+-- ===========================================================================
 local player = game.Players.LocalPlayer
 repeat wait() until player.Character and player.Character:FindFirstChild("HumanoidRootPart")
 
--- Interface simples e direta
+-- Interface
 local screenGui = Instance.new("ScreenGui", player.PlayerGui)
 screenGui.Name = "HubRakoof"
 
@@ -15,7 +46,6 @@ main.BorderSizePixel = 0
 main.Active = true
 main.Draggable = true
 
--- Barra de título
 local titleBar = Instance.new("Frame", main)
 titleBar.Size = UDim2.new(1, 0, 0, 30)
 titleBar.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
@@ -23,7 +53,7 @@ titleBar.BorderSizePixel = 0
 
 local title = Instance.new("TextLabel", titleBar)
 title.Size = UDim2.new(1, 0, 1, 0)
-title.Text = "Rakoof Hub"
+title.Text = "Rakoof Hub (Seguro)"
 title.TextColor3 = Color3.fromRGB(255, 255, 255)
 title.BackgroundTransparency = 1
 title.Font = Enum.Font.SourceSansBold
@@ -40,7 +70,6 @@ close.Font = Enum.Font.SourceSansBold
 close.TextSize = 16
 close.MouseButton1Click:Connect(function() screenGui:Destroy() end)
 
--- Conteúdo com scroll
 local content = Instance.new("ScrollingFrame", main)
 content.Size = UDim2.new(1, 0, 1, -30)
 content.Position = UDim2.new(0, 0, 0, 30)
@@ -51,7 +80,6 @@ content.CanvasSize = UDim2.new(0, 0, 0, 0)
 
 local yPos = 10
 
--- Função para adicionar botão
 local function addButton(text, callback)
     local btn = Instance.new("TextButton")
     btn.Size = UDim2.new(1, -20, 0, 35)
@@ -69,7 +97,6 @@ local function addButton(text, callback)
     return btn
 end
 
--- Função para adicionar toggle
 local function addToggle(text, callback)
     local btn = Instance.new("TextButton")
     btn.Size = UDim2.new(1, -20, 0, 35)
@@ -109,7 +136,6 @@ end
 local function equipBest()
     local best, bestDps = nil, 0
     local items = {}
-    
     local function scan(cont)
         for _, t in pairs(cont:GetChildren()) do
             if t:IsA("Tool") then table.insert(items, t) end
@@ -117,7 +143,6 @@ local function equipBest()
     end
     if player.Backpack then scan(player.Backpack) end
     if player.Character then scan(player.Character) end
-    
     for _, t in pairs(items) do
         local dps = 20
         if t.Name:lower():find("kunai") then dps = 75
@@ -153,7 +178,8 @@ addToggle("🛡️ God Mode", function(v)
     end)
 end)
 
-addToggle("⚡ Auto Farm", function(v)
+-- Auto Farm com intervalo maior e pausa aleatória para simular jogador real
+addToggle("⚡ Auto Farm (Seguro)", function(v)
     spawn(function()
         while v do
             local boss = getBoss()
@@ -162,7 +188,11 @@ addToggle("⚡ Auto Farm", function(v)
                     weaponEvent:FireServer("Swing", boss)
                 end)
             end
-            wait(0.3)
+            wait(0.5) -- Intervalo maior
+            -- Pequena pausa aleatória para não ser tão robótico
+            if math.random(1, 10) > 8 then
+                wait(1)
+            end
         end
     end)
 end)
@@ -191,4 +221,4 @@ addButton("🚀 Teleporte Seguro", function()
     end
 end)
 
-print("✅ Script Enxuto carregado!")
+print("✅ Script com proteções adicionais carregado!")
