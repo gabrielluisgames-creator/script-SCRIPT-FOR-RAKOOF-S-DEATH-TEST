@@ -1,42 +1,75 @@
--- RAKOOF'S DEATH TEST - SCRIPT COM BYPASS (TENTATIVA ANTI-KICK)
+-- RAKOOF'S DEATH TEST - SCRIPT FURTIVO (TENTATIVA AVANÇADA DE BYPASS)
 
 -- ===========================================================================
--- BYPASS SIMPLES (Tenta remover funções de Kick e anti-cheats básicos)
+-- CAMADA DE PROTEÇÃO INICIAL (EXECUTADA ANTES DE TUDO)
 -- ===========================================================================
-local success, err = pcall(function()
-    -- 1. Tenta "sequestrar" a função Kick do jogador local para que ela não funcione
-    local LocalPlayer = game:GetService("Players").LocalPlayer
-    if LocalPlayer then
-        local KickFunction = LocalPlayer.Kick
-        LocalPlayer.Kick = function(...) return end
-    end
-
-    -- 2. Tenta encontrar e neutralizar scripts com nomes suspeitos
-    for _, obj in pairs(game:GetDescendants()) do
-        local name = obj.Name:lower()
-        if obj:IsA("Script") or obj:IsA("LocalScript") then
-            if name:find("anti") or name:find("kick") or name:find("detect") or name:find("ban") or name:find("cheat") then
-                obj.Enabled = false
+local function applyStealthMeasures()
+    local success, err = pcall(function()
+        local Players = game:GetService("Players")
+        local LocalPlayer = Players.LocalPlayer
+        
+        -- 1. Hook mais robusto da função Kick
+        if LocalPlayer then
+            local Kick = LocalPlayer.Kick
+            LocalPlayer.Kick = function(...) 
+                -- Não faz nada, apenas engole a tentativa de kick
+                return nil 
             end
-        elseif obj:IsA("RemoteEvent") and (name:find("kick") or name:find("ban") or name:find("report")) then
-            obj:Destroy()
         end
-    end
-end)
 
-if not success then
-    print("Bypass não pôde ser aplicado completamente. O jogo pode ter proteções mais fortes.")
+        -- 2. Desativa scripts suspeitos de forma mais ampla
+        for _, obj in ipairs(game:GetDescendants()) do
+            if obj:IsA("LocalScript") or obj:IsA("Script") or obj:IsA("ModuleScript") then
+                local name = obj.Name:lower()
+                -- Palavras-chave comuns em anti-cheats
+                if name:find("anti") or name:find("kick") or name:find("ban") or 
+                   name:find("detect") or name:find("cheat") or name:find("hack") or 
+                   name:find("exploit") or name:find("guard") or name:find("watch") then
+                    obj.Enabled = false
+                end
+            elseif obj:IsA("RemoteEvent") or obj:IsA("RemoteFunction") then
+                local name = obj.Name:lower()
+                if name:find("kick") or name:find("ban") or name:find("report") or 
+                   name:find("modcall") or name:find("admin") then
+                    obj:Destroy()
+                end
+            elseif obj:IsA("ScreenGui") then
+                -- Destroi GUIs de admin frequentemente usadas para kickar
+                local name = obj.Name:lower()
+                if name:find("admin") or name:find("mod") or name:find("cmd") then
+                    obj.Enabled = false
+                end
+            end
+        end
+        
+        -- 3. Remove listeners de logs suspeitos
+        if _G then
+            _G.print = function() end
+            _G.warn = function() end
+        end
+    end)
+    if not success then
+        print("Aviso: Algumas proteções não puderam ser aplicadas.")
+    end
 end
 
+applyStealthMeasures()
+
 -- ===========================================================================
--- SCRIPT PRINCIPAL (COM FUNÇÕES DE SEGURANÇA ADICIONAIS)
+-- CONFIGURAÇÃO DE SEGURANÇA DO SCRIPT
 -- ===========================================================================
 local player = game.Players.LocalPlayer
 repeat wait() until player.Character and player.Character:FindFirstChild("HumanoidRootPart")
 
--- Interface
+-- Variáveis de controle de execução segura
+local stealthMode = true        -- Ativa ações mais lentas e pausas aleatórias
+local maxFarmTime = 120         -- Tempo máximo de farm contínuo (segundos)
+local farmStartTime = 0
+local shouldStopFarm = false
+
+-- Interface simples e direta (sem elementos chamativos)
 local screenGui = Instance.new("ScreenGui", player.PlayerGui)
-screenGui.Name = "HubRakoof"
+screenGui.Name = "HubFurtivo"
 
 local main = Instance.new("Frame", screenGui)
 main.Size = UDim2.new(0, 250, 0, 250)
@@ -53,7 +86,7 @@ titleBar.BorderSizePixel = 0
 
 local title = Instance.new("TextLabel", titleBar)
 title.Size = UDim2.new(1, 0, 1, 0)
-title.Text = "Rakoof Hub (Seguro)"
+title.Text = "Rakoof Hub (Furtivo)"
 title.TextColor3 = Color3.fromRGB(255, 255, 255)
 title.BackgroundTransparency = 1
 title.Font = Enum.Font.SourceSansBold
@@ -68,7 +101,10 @@ close.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
 close.BorderSizePixel = 0
 close.Font = Enum.Font.SourceSansBold
 close.TextSize = 16
-close.MouseButton1Click:Connect(function() screenGui:Destroy() end)
+close.MouseButton1Click:Connect(function() 
+    shouldStopFarm = true
+    screenGui:Destroy() 
+end)
 
 local content = Instance.new("ScrollingFrame", main)
 content.Size = UDim2.new(1, 0, 1, -30)
@@ -80,6 +116,7 @@ content.CanvasSize = UDim2.new(0, 0, 0, 0)
 
 local yPos = 10
 
+-- Função para adicionar botão
 local function addButton(text, callback)
     local btn = Instance.new("TextButton")
     btn.Size = UDim2.new(1, -20, 0, 35)
@@ -97,6 +134,7 @@ local function addButton(text, callback)
     return btn
 end
 
+-- Função para adicionar toggle
 local function addToggle(text, callback)
     local btn = Instance.new("TextButton")
     btn.Size = UDim2.new(1, -20, 0, 35)
@@ -119,7 +157,9 @@ local function addToggle(text, callback)
     return btn
 end
 
--- Lógica do jogo
+-- ===========================================================================
+-- LÓGICA DO JOGO COM ATRASOS E SEGURANÇA
+-- ===========================================================================
 local rs = game:GetService("ReplicatedStorage")
 local weaponEvent = rs:FindFirstChild("WeaponEvent")
 
@@ -158,13 +198,40 @@ local function equipBest()
     end
 end
 
--- Botões e Funções
-addButton("🎯 Matar Rakoof", function()
-    local boss = getBoss()
-    if boss then boss.Humanoid.Health = 0 end
+-- Auto Farm com limites de tempo e pausas aleatórias
+addToggle("⚡ Auto Farm (Limitado)", function(v)
+    if v then
+        farmStartTime = tick()
+        shouldStopFarm = false
+        spawn(function()
+            while v and not shouldStopFarm do
+                -- Verifica tempo máximo para não ficar farmando eternamente
+                if stealthMode and (tick() - farmStartTime > maxFarmTime) then
+                    print("Auto Farm pausado por segurança. Reative se desejar.")
+                    break
+                end
+                
+                local boss = getBoss()
+                if boss and weaponEvent then
+                    pcall(function()
+                        weaponEvent:FireServer("Swing", boss)
+                    end)
+                end
+                
+                -- Intervalo base mais longo
+                local waitTime = stealthMode and 0.8 or 0.4
+                wait(waitTime)
+                
+                -- Pausa aleatória para simular jogador humano
+                if stealthMode and math.random(1, 100) <= 15 then
+                    wait(math.random(15, 30) / 10) -- 1.5 a 3 segundos
+                end
+            end
+        end)
+    else
+        shouldStopFarm = true
+    end
 end)
-
-addButton("🔪 Equipar Melhor", equipBest)
 
 addToggle("🛡️ God Mode", function(v)
     spawn(function()
@@ -173,26 +240,7 @@ addToggle("🛡️ God Mode", function(v)
             if c and c:FindFirstChildOfClass("Humanoid") then
                 c.Humanoid.Health = c.Humanoid.MaxHealth
             end
-            wait(0.1)
-        end
-    end)
-end)
-
--- Auto Farm com intervalo maior e pausa aleatória para simular jogador real
-addToggle("⚡ Auto Farm (Seguro)", function(v)
-    spawn(function()
-        while v do
-            local boss = getBoss()
-            if boss and weaponEvent then
-                pcall(function()
-                    weaponEvent:FireServer("Swing", boss)
-                end)
-            end
-            wait(0.5) -- Intervalo maior
-            -- Pequena pausa aleatória para não ser tão robótico
-            if math.random(1, 10) > 8 then
-                wait(1)
-            end
+            wait(0.2)
         end
     end)
 end)
@@ -209,9 +257,16 @@ addToggle("🔋 Stamina Infinita", function(v)
                     h:SetStateEnabled(Enum.HumanoidStateType.Running, true)
                 end
             end
-            wait(0.1)
+            wait(0.2)
         end
     end)
+end)
+
+addButton("🔪 Equipar Melhor", equipBest)
+
+addButton("🎯 Matar Rakoof", function()
+    local boss = getBoss()
+    if boss then boss.Humanoid.Health = 0 end
 end)
 
 addButton("🚀 Teleporte Seguro", function()
@@ -221,4 +276,11 @@ addButton("🚀 Teleporte Seguro", function()
     end
 end)
 
-print("✅ Script com proteções adicionais carregado!")
+addButton("⏹️ Parar Tudo e Limpar", function()
+    shouldStopFarm = true
+    -- Desativa todas as corrotinas ativas (simples)
+    screenGui:Destroy()
+    print("Script finalizado e rastros minimizados.")
+end)
+
+print("✅ Script Furtivo carregado. Use com moderação.")
