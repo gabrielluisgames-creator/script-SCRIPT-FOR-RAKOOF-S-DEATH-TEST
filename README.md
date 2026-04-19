@@ -1,272 +1,200 @@
 --[[
-    RAKOOF'S DEATH TEST - HUB PREMIUM v3.0 (Corrigido)
-    - Compatível com Delta Executor (PC e Mobile)
-    - Inclui modo de segurança para evitar detecção
-    - URL da UI atualizada
+    RAKOOF'S DEATH TEST - SCRIPT COM INTERFACE DIRETA E SCANNER
+    - Cria uma ScreenGui do zero para garantir compatibilidade
+    - Scanner de itens para encontrar a arma mais forte e rápida
+    - Botão para esconder/mostrar a interface
 ]]
 
--- === CORREÇÃO 1: Ativa o Modo Seguro da Rayfield (anti-crash/detecção) ===
-getgenv().SecureMode = true
+-- 1. Criação da Interface Gráfica (ScreenGui)
+local player = game.Players.LocalPlayer
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "RakoofHubUI"
+screenGui.Parent = player:WaitForChild("PlayerGui")
 
--- === CORREÇÃO 2: Usa uma URL alternativa e mais estável da Rayfield ===
-local Rayfield = loadstring(game:HttpGet('https://raw.githubusercontent.com/shlexware/Rayfield/main/source'))()
--- Caso a de cima falhe, tenta a original
-if not Rayfield then
-    Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
-end
+-- Frame Principal (o painel)
+local mainFrame = Instance.new("Frame")
+mainFrame.Name = "MainFrame"
+mainFrame.Size = UDim2.new(0, 300, 0, 400)
+mainFrame.Position = UDim2.new(0.5, -150, 0.5, -200)
+mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+mainFrame.BorderSizePixel = 0
+mainFrame.Active = true
+mainFrame.Draggable = true
+mainFrame.Parent = screenGui
 
--- Verifica se a biblioteca carregou, se não, para o script.
-if not Rayfield then
-    warn("Rayfield failed to load - script stopping.")
-    return
-end
+-- Título
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, 0, 0, 30)
+title.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+title.TextColor3 = Color3.fromRGB(255, 255, 255)
+title.Text = "⚡ RAKOOF HUB"
+title.Font = Enum.Font.SourceSansBold
+title.TextSize = 18
+title.Parent = mainFrame
 
--- 2. Cria a janela principal
-local Window = Rayfield:CreateWindow({
-    Name = "Rakoof Hub | Premium+",
-    LoadingTitle = "Iniciando Rakoof Hub...",
-    LoadingSubtitle = "by IA Expert - Delta Executor",
-    ConfigurationSaving = {
-        Enabled = true,
-        FolderName = "RakoofHub",
-        FileName = "Config"
-    },
-    KeySystem = false
-})
+-- Botão para Fechar/Abrir
+local toggleButton = Instance.new("TextButton")
+toggleButton.Size = UDim2.new(0, 60, 0, 25)
+toggleButton.Position = UDim2.new(1, -65, 0, 5)
+toggleButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+toggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+toggleButton.Text = "Ocultar"
+toggleButton.Font = Enum.Font.SourceSansBold
+toggleButton.TextSize = 14
+toggleButton.Parent = mainFrame
 
--- ========== CONFIGURAÇÃO PARA CELULAR (BOTÃO FLUTUANTE) ==========
-Window:SetMinimizeButton({
-    Image = "rbxassetid://4483362458",   -- Ícone de seta
-    Size = {35, 35},                     -- Tamanho para toque fácil
-    Color = Color3.fromRGB(255, 255, 255),
-    CornerRadius = UDim.new(0, 8)
-})
-Window:ToggleKeybind(Enum.KeyCode.F4)    -- Necessário para ativar o botão flutuante
-Window:MakeDraggable(true)               -- Permite arrastar o botão na tela
--- =================================================================
+-- Estado do painel (visível ou não)
+local panelVisible = true
+toggleButton.MouseButton1Click:Connect(function()
+    panelVisible = not panelVisible
+    mainFrame.Visible = panelVisible
+    toggleButton.Text = panelVisible and "Ocultar" or "Mostrar"
+end)
 
--- Variáveis de controle do farm
-local Farming = false
-local TransformDetected = false
-local PauseFarming = false
-local TargetFriendName = ""
-local KillThreshold = 5
+-- Área de Conteúdo
+local contentFrame = Instance.new("Frame")
+contentFrame.Size = UDim2.new(1, 0, 1, -35)
+contentFrame.Position = UDim2.new(0, 0, 0, 35)
+contentFrame.BackgroundTransparency = 1
+contentFrame.Parent = mainFrame
 
--- Função para localizar o Rakoof (chefe)
-local function GetBoss()
-    for _, v in pairs(workspace:GetDescendants()) do
-        if v.Name == "RakOOF" or v.Name == "Rake" or v.Name:lower():find("rakoof") then
-            local hum = v:FindFirstChildOfClass("Humanoid")
-            if hum and hum.Health > 0 then
-                return v, hum
+-- 2. Função do Scanner de Armas (Encontra a mais forte e rápida)
+local function scanBestWeapon()
+    local bestWeapon = nil
+    local bestDPS = 0
+    local player = game.Players.LocalPlayer
+    local backpack = player:FindFirstChild("Backpack")
+    
+    -- Lista de itens para verificar (mochila e personagem)
+    local items = {}
+    if backpack then
+        for _, item in ipairs(backpack:GetChildren()) do
+            if item:IsA("Tool") then
+                table.insert(items, item)
             end
         end
     end
-    return nil, nil
-end
-
--- Função para localizar os Scratchers (bichos pequenos)
-local function GetScratcher()
-    for _, v in pairs(workspace:GetDescendants()) do
-        if v.Name == "Scratcher" or v.Name:lower():find("scratch") then
-            local hum = v:FindFirstChildOfClass("Humanoid")
-            if hum and hum.Health > 0 then
-                return v, hum
+    if player.Character then
+        for _, item in ipairs(player.Character:GetChildren()) do
+            if item:IsA("Tool") then
+                table.insert(items, item)
             end
         end
     end
-    return nil, nil
-end
-
--- 3. Aba Principal (Auto-Farm)
-local MainTab = Window:CreateTab("⚡ Auto-Farm Premium", 4483362458)
-
-MainTab:CreateSection("🎯 Configuração de Ajuda")
-
-local FriendFarmInput = MainTab:CreateInput({
-    Name = "Nome do Amigo",
-    PlaceholderText = "Ex: joaozinho123",
-    Flag = "FriendName"
-})
-
-local KillThresholdInput = MainTab:CreateInput({
-    Name = "Kills necessárias para matar o boss",
-    PlaceholderText = "Ex: 10",
-    Flag = "KillThreshold"
-})
-
-MainTab:CreateSection("⚙️ Controle do Farm")
-
-local AutoFarmToggle = MainTab:CreateToggle({
-    Name = "Iniciar Farm Automático",
-    CurrentValue = false,
-    Flag = "AutoFarm",
-    Callback = function(Value)
-        Farming = Value
-        if Value then
-            TargetFriendName = FriendFarmInput.CurrentValue or ""
-            KillThreshold = tonumber(KillThresholdInput.CurrentValue) or 5
-
-            Rayfield:Notify({
-                Title = "Rakoof Hub",
-                Content = "Farm ativado! Ajudando "..TargetFriendName.." até "..KillThreshold.." kills.",
-                Duration = 3,
-                Image = 4483362458
-            })
-
-            -- Thread principal do farm
-            spawn(function()
-                while Farming do
-                    if PauseFarming then
-                        wait(1)
-                        continue
-                    end
-
-                    local player = game.Players.LocalPlayer
-                    local character = player.Character or player.CharacterAdded:Wait()
-
-                    -- 1. Equipa a melhor arma (Kunai ou espada)
-                    local tool = character:FindFirstChild("Kunai") or character:FindFirstChild("Sword") or character:FindFirstChildOfClass("Tool")
-                    if tool then
-                        player.Character.Humanoid:EquipTool(tool)
-                    end
-
-                    -- 2. Verifica se o amigo já bateu a meta de kills
-                    local shouldAttackBoss = false
-                    if TargetFriendName ~= "" then
-                        local targetPlayer = game.Players:FindFirstChild(TargetFriendName)
-                        if targetPlayer then
-                            local leaderstats = targetPlayer:FindFirstChild("leaderstats")
-                            local kills = leaderstats and leaderstats:FindFirstChild("Kills")
-                            if kills and kills.Value >= KillThreshold then
-                                shouldAttackBoss = true
-                            end
-                        end
-                    end
-
-                    -- 3. Ataca o alvo correto
-                    if shouldAttackBoss then
-                        local boss, hum = GetBoss()
-                        if boss and hum then
-                            -- Simula ataque com arma
-                            local args = {
-                                [1] = "Swing",
-                                [2] = boss
-                            }
-                            pcall(function()
-                                game:GetService("ReplicatedStorage"):FindFirstChild("WeaponEvent"):FireServer(unpack(args))
-                            end)
-                        end
-                    else
-                        local scratcher, humS = GetScratcher()
-                        if scratcher and humS then
-                            local args = {
-                                [1] = "Swing",
-                                [2] = scratcher
-                            }
-                            pcall(function()
-                                game:GetService("ReplicatedStorage"):FindFirstChild("WeaponEvent"):FireServer(unpack(args))
-                            end)
-                        end
-                    end
-
-                    wait(0.3) -- Intervalo entre ataques
-                end
-            end)
+    
+    -- Para cada ferramenta, tenta estimar o dano (DPS)
+    for _, tool in ipairs(items) do
+        -- Tenta encontrar um valor de dano no nome ou em atributos
+        local damage = 0
+        local speed = 1 -- Velocidade base
+        
+        -- Heurística para identificar dano baseado no nome da arma
+        local name = tool.Name:lower()
+        if name:find("kunai") then
+            damage = 50
+            speed = 1.5
+        elseif name:find("sword") or name:find("espada") then
+            damage = 40
+            speed = 1.0
+        elseif name:find("hammer") or name:find("martelo") then
+            damage = 60
+            speed = 0.7
+        elseif name:find("axe") or name:find("machado") then
+            damage = 55
+            speed = 0.8
+        elseif name:find("gun") or name:find("pistol") then
+            damage = 30
+            speed = 2.0
         else
-            Rayfield:Notify({
-                Title = "Rakoof Hub",
-                Content = "Farm automático desativado.",
-                Duration = 3,
-                Image = 4483362458
-            })
+            damage = 20 -- Valor padrão
+        end
+        
+        local dps = damage * speed
+        if dps > bestDPS then
+            bestDPS = dps
+            bestWeapon = tool
         end
     end
-})
+    
+    return bestWeapon
+end
 
--- 4. Monitor de Transformação (Thread separada)
-spawn(function()
-    while true do
-        if Farming then
-            local boss, _ = GetBoss()
-            if boss then
-                local transformEffect = boss:FindFirstChild("Transforming") or boss:FindFirstChild("Rage")
-                if transformEffect and transformEffect.Value == true then
-                    if not TransformDetected then
-                        TransformDetected = true
-                        PauseFarming = true
-                        Rayfield:Notify({
-                            Title = "⚠️ Transformação",
-                            Content = "Rakoof está se transformando! Pausando ataques...",
-                            Duration = 3,
-                            Image = 4483362458
-                        })
-                    end
-                else
-                    if TransformDetected then
-                        TransformDetected = false
-                        PauseFarming = false
-                        Rayfield:Notify({
-                            Title = "✅ Retomando",
-                            Content = "Transformação finalizada! Voltando a atacar.",
-                            Duration = 3,
-                            Image = 4483362458
-                        })
-                    end
-                end
-            end
-        end
-        wait(0.5)
+-- 3. Elementos da Interface
+local statusLabel = Instance.new("TextLabel")
+statusLabel.Size = UDim2.new(1, -10, 0, 25)
+statusLabel.Position = UDim2.new(0, 5, 0, 10)
+statusLabel.BackgroundTransparency = 1
+statusLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+statusLabel.Text = "Status: Aguardando"
+statusLabel.Font = Enum.Font.SourceSans
+statusLabel.TextSize = 14
+statusLabel.TextXAlignment = Enum.TextXAlignment.Left
+statusLabel.Parent = contentFrame
+
+local scanButton = Instance.new("TextButton")
+scanButton.Size = UDim2.new(1, -10, 0, 30)
+scanButton.Position = UDim2.new(0, 5, 0, 45)
+scanButton.BackgroundColor3 = Color3.fromRGB(0, 150, 200)
+scanButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+scanButton.Text = "🔍 Escanear Melhor Arma"
+scanButton.Font = Enum.Font.SourceSansBold
+scanButton.TextSize = 14
+scanButton.Parent = contentFrame
+
+scanButton.MouseButton1Click:Connect(function()
+    local weapon = scanBestWeapon()
+    if weapon then
+        statusLabel.Text = "Melhor arma: " .. weapon.Name .. " (Equipando...)"
+        player.Character.Humanoid:EquipTool(weapon)
+    else
+        statusLabel.Text = "Nenhuma arma encontrada."
     end
 end)
 
--- 5. Aba de Utilitários
-local UtilTab = Window:CreateTab("🛠️ Utilitários", 4483362458)
+local equipButton = Instance.new("TextButton")
+equipButton.Size = UDim2.new(1, -10, 0, 30)
+equipButton.Position = UDim2.new(0, 5, 0, 85)
+equipButton.BackgroundColor3 = Color3.fromRGB(0, 200, 100)
+equipButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+equipButton.Text = "⚔️ Equipar Melhor Arma"
+equipButton.Font = Enum.Font.SourceSansBold
+equipButton.TextSize = 14
+equipButton.Parent = contentFrame
 
-UtilTab:CreateSection("🎒 Armas")
-UtilTab:CreateButton({
-    Name = "Equipar Kunai (Arma Forte)",
-    Callback = function()
-        local player = game.Players.LocalPlayer
-        local character = player.Character or player.CharacterAdded:Wait()
-        local tool = character:FindFirstChild("Kunai") or character:FindFirstChild("Sword")
-        if tool then
-            player.Character.Humanoid:EquipTool(tool)
-            Rayfield:Notify({
-                Title = "Arma",
-                Content = "Kunai equipada!",
-                Duration = 3,
-                Image = 4483362458
-            })
-        else
-            Rayfield:Notify({
-                Title = "Erro",
-                Content = "Você não possui Kunai ou Espada.",
-                Duration = 3,
-                Image = 4483362458
-            })
-        end
+equipButton.MouseButton1Click:Connect(function()
+    local weapon = scanBestWeapon()
+    if weapon then
+        player.Character.Humanoid:EquipTool(weapon)
+        statusLabel.Text = "Arma equipada: " .. weapon.Name
+    else
+        statusLabel.Text = "Nenhuma arma para equipar."
     end
-})
+end)
 
--- 6. Aba de Configurações
-local ConfigTab = Window:CreateTab("⚙️ Configurações", 4483362458)
+-- 4. Botão para esconder/mostrar o painel flutuante (para celular)
+local floatButton = Instance.new("TextButton")
+floatButton.Size = UDim2.new(0, 40, 0, 40)
+floatButton.Position = UDim2.new(1, -50, 0.5, -20)
+floatButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+floatButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+floatButton.Text = "⚡"
+floatButton.Font = Enum.Font.SourceSansBold
+floatButton.TextSize = 20
+floatButton.Parent = screenGui
+floatButton.Active = true
+floatButton.Draggable = true
 
-ConfigTab:CreateSection("🎛️ Sistema")
-ConfigTab:CreateButton({
-    Name = "Recarregar Interface",
-    Callback = function()
-        Rayfield:Destroy()
-        loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
-    end
-})
+floatButton.MouseButton1Click:Connect(function()
+    panelVisible = not panelVisible
+    mainFrame.Visible = panelVisible
+    toggleButton.Text = panelVisible and "Ocultar" or "Mostrar"
+end)
 
-ConfigTab:CreateLabel("Dica: Use o botão flutuante para esconder/mostrar o menu no celular.", 4483362458)
-
--- 7. Notificação de boas-vindas
-Rayfield:Notify({
-    Title = "Rakoof Hub Premium+",
-    Content = "Script carregado! Configure o nome do amigo e as kills para iniciar o farm.",
+-- Notificação Inicial
+game:GetService("StarterGui"):SetCore("SendNotification", {
+    Title = "Rakoof Hub",
+    Text = "Interface carregada! Use os botões para escanear e equipar a melhor arma.",
     Duration = 5,
-    Image = 4483362458
 })
+
+print("✅ Rakoof Hub com interface direta carregado!")
